@@ -1,6 +1,6 @@
 # Python CLI Todo Application
 
-[![Tests](https://img.shields.io/badge/tests-117%20passing-brightgreen)](https://github.com/Malikasadjaved/Python-Todo-Cli-App)
+[![Tests](https://img.shields.io/badge/tests-140%20passing-brightgreen)](https://github.com/Malikasadjaved/Python-Todo-Cli-App)
 [![Coverage](https://img.shields.io/badge/coverage-51%25-yellow)](https://github.com/Malikasadjaved/Python-Todo-Cli-App)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -8,7 +8,7 @@
 
 A feature-rich command-line todo application built with **Test-Driven Development (TDD)** and **Spec-Driven Development (SDD)**, featuring three-tier progressive architecture: Primary (CRUD), Intermediate (Organization), and Advanced (Automation).
 
-> **🎯 Hackathon Project:** Built with rigorous software engineering practices - 117 comprehensive tests, clean architecture, and professional-grade code quality.
+> **🎯 Hackathon Project:** Built with rigorous software engineering practices - 140 comprehensive tests, clean architecture, and professional-grade code quality.
 
 ## Features
 
@@ -17,7 +17,7 @@ A feature-rich command-line todo application built with **Test-Driven Developmen
 - ✅ View all tasks with visual indicators
 - ✅ Update task details
 - ✅ Delete tasks with confirmation
-- ✅ Mark tasks complete/incomplete with timestamps
+- ✅ Status Mark submenu (Complete/Incomplete with A/B selection)
 
 ### Intermediate Tier - Organization
 - 🏷️ Priority management (HIGH/MEDIUM/LOW)
@@ -85,7 +85,7 @@ PRIMARY TIER - Core Operations:
 2. View All Tasks
 3. Update Task
 4. Delete Task
-5. Mark Complete/Incomplete
+5. Status Mark (Complete/Incomplete)
 
 INTERMEDIATE TIER - Organization:
 6. Search Tasks
@@ -93,8 +93,8 @@ INTERMEDIATE TIER - Organization:
 8. Sort Tasks
 
 ADVANCED TIER - Automation:
-9. Manage Recurring Tasks
-10. View Upcoming Reminders
+9. Recurring Tasks (Automatic)
+10. Reminders (Automatic)
 
 0. Exit
 ```
@@ -231,7 +231,7 @@ To-do-app/
 
 ## Test Coverage
 
-**Total Tests:** 117 passing ✅
+**Total Tests:** 140 passing ✅
 
 **Coverage by Module:**
 - `storage.py`: 100% - Core CRUD operations
@@ -250,8 +250,8 @@ The CLI layer has lower coverage as it's the interactive presentation layer. All
 
 **PRODUCTION READY** 🎉
 
-✅ 13 features complete (12 original + 1 UX enhancement)
-✅ 117 tests passing
+✅ 14 features complete (12 original + 2 UX enhancements)
+✅ 140 tests passing
 ✅ Code formatted with black
 ✅ Flake8 compliant
 ✅ Type-hinted
