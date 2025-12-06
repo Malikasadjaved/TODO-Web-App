@@ -494,3 +494,194 @@ class TestSelectSortOption:
 
         captured = capsys.readouterr()
         assert "Invalid" in captured.out or "invalid" in captured.out
+
+
+class TestAskRetry:
+    """Test ask_retry helper function (F015)."""
+
+    def test_ask_retry_yes(self, monkeypatch):
+        """Test user chooses to retry (yes)."""
+        from src.todo.cli import ask_retry
+
+        monkeypatch.setattr("builtins.input", lambda _: "yes")
+        result = ask_retry("due date", "2025-12-31")
+        assert result is True
+
+    def test_ask_retry_yes_short(self, monkeypatch):
+        """Test user chooses to retry (y)."""
+        from src.todo.cli import ask_retry
+
+        monkeypatch.setattr("builtins.input", lambda _: "y")
+        result = ask_retry("due date", "2025-12-31")
+        assert result is True
+
+    def test_ask_retry_no(self, monkeypatch):
+        """Test user chooses not to retry (no)."""
+        from src.todo.cli import ask_retry
+
+        monkeypatch.setattr("builtins.input", lambda _: "no")
+        result = ask_retry("due date", "2025-12-31")
+        assert result is False
+
+    def test_ask_retry_empty_default_no(self, monkeypatch):
+        """Test empty input defaults to no (don't retry)."""
+        from src.todo.cli import ask_retry
+
+        monkeypatch.setattr("builtins.input", lambda _: "")
+        result = ask_retry("due date", "2025-12-31")
+        assert result is False
+
+
+class TestGetDateInputWithRetry:
+    """Test get_date_input_with_retry function (F015)."""
+
+    def test_date_input_valid_first_try(self, monkeypatch):
+        """Test valid date on first try."""
+        from src.todo.cli import get_date_input_with_retry
+
+        monkeypatch.setattr("builtins.input", lambda _: "2025-12-31")
+        result = get_date_input_with_retry("Due date: ")
+        assert result is not None
+        assert result.year == 2025
+        assert result.month == 12
+        assert result.day == 31
+
+    def test_date_input_retry_success(self, monkeypatch):
+        """Test successful retry after invalid date."""
+        from src.todo.cli import get_date_input_with_retry
+
+        inputs = iter(["invalid-date", "y", "2025-12-31"])
+        monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+        result = get_date_input_with_retry("Due date: ")
+        assert result is not None
+        assert result.year == 2025
+
+    def test_date_input_retry_cancel(self, monkeypatch, capsys):
+        """Test canceling retry after invalid date."""
+        from src.todo.cli import get_date_input_with_retry
+
+        inputs = iter(["invalid-date", "n"])
+        monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+        result = get_date_input_with_retry("Due date: ")
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "Example:" in captured.out or "example" in captured.out.lower()
+
+    def test_date_input_empty_skip(self, monkeypatch):
+        """Test empty input skips date (returns None)."""
+        from src.todo.cli import get_date_input_with_retry
+
+        monkeypatch.setattr("builtins.input", lambda _: "")
+        result = get_date_input_with_retry("Due date: ")
+        assert result is None
+
+
+class TestGetTaskIdWithRetry:
+    """Test get_task_id_with_retry function (F015)."""
+
+    def test_task_id_valid_first_try(self, monkeypatch):
+        """Test valid task ID on first try."""
+        from src.todo.cli import get_task_id_with_retry
+
+        monkeypatch.setattr("builtins.input", lambda _: "5")
+        result = get_task_id_with_retry("Task ID: ")
+        assert result == 5
+
+    def test_task_id_retry_success(self, monkeypatch):
+        """Test successful retry after invalid task ID."""
+        from src.todo.cli import get_task_id_with_retry
+
+        inputs = iter(["abc", "y", "5"])
+        monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+        result = get_task_id_with_retry("Task ID: ")
+        assert result == 5
+
+    def test_task_id_retry_cancel(self, monkeypatch, capsys):
+        """Test canceling retry after invalid task ID."""
+        from src.todo.cli import get_task_id_with_retry
+
+        inputs = iter(["abc", "n"])
+        monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+        result = get_task_id_with_retry("Task ID: ")
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "Example:" in captured.out or "example" in captured.out.lower()
+
+    def test_task_id_negative_retry(self, monkeypatch):
+        """Test retry after negative task ID."""
+        from src.todo.cli import get_task_id_with_retry
+
+        inputs = iter(["-1", "y", "3"])
+        monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+        result = get_task_id_with_retry("Task ID: ")
+        assert result == 3
+
+    def test_task_id_zero_retry(self, monkeypatch):
+        """Test retry after zero task ID."""
+        from src.todo.cli import get_task_id_with_retry
+
+        inputs = iter(["0", "y", "1"])
+        monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+        result = get_task_id_with_retry("Task ID: ")
+        assert result == 1
+
+
+class TestGetTitleWithRetry:
+    """Test get_title_with_retry function (F015)."""
+
+    def test_title_valid_first_try(self, monkeypatch):
+        """Test valid title on first try."""
+        from src.todo.cli import get_title_with_retry
+
+        monkeypatch.setattr("builtins.input", lambda _: "My Task")
+        result = get_title_with_retry()
+        assert result == "My Task"
+
+    def test_title_retry_success(self, monkeypatch):
+        """Test successful retry after empty title."""
+        from src.todo.cli import get_title_with_retry
+
+        inputs = iter(["", "y", "My Task"])
+        monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+        result = get_title_with_retry()
+        assert result == "My Task"
+
+    def test_title_retry_cancel(self, monkeypatch, capsys):
+        """Test canceling retry after empty title."""
+        from src.todo.cli import get_title_with_retry
+
+        inputs = iter(["", "n"])
+        monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+        result = get_title_with_retry()
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "Example:" in captured.out or "example" in captured.out.lower()
+
+    def test_title_whitespace_only_retry(self, monkeypatch):
+        """Test retry after whitespace-only title."""
+        from src.todo.cli import get_title_with_retry
+
+        inputs = iter(["   ", "y", "Valid Title"])
+        monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+        result = get_title_with_retry()
+        assert result == "Valid Title"
+
+    def test_title_strips_whitespace(self, monkeypatch):
+        """Test that title strips leading/trailing whitespace."""
+        from src.todo.cli import get_title_with_retry
+
+        monkeypatch.setattr("builtins.input", lambda _: "  My Task  ")
+        result = get_title_with_retry()
+        assert result == "My Task"

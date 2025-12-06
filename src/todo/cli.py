@@ -1,5 +1,6 @@
 """Command-line interface for Todo Application."""
 
+from datetime import datetime
 from typing import Optional
 from colorama import Fore, Style, init as colorama_init
 
@@ -311,12 +312,112 @@ def select_sort_option() -> str:
         return "due_date"
 
 
+def ask_retry(field_name: str, example: str) -> bool:
+    """Ask user if they want to retry after validation error.
+
+    Args:
+        field_name: Name of the field that had validation error
+        example: Example of correct format
+
+    Returns:
+        True if user wants to retry, False otherwise
+    """
+    print(
+        f"\n{Fore.YELLOW}Would you like to try entering "
+        f"{field_name} again?{Style.RESET_ALL}"
+    )
+    print(f"{Fore.CYAN}Example: {example}{Style.RESET_ALL}")
+
+    choice = get_input("Retry? (yes/no) [no]: ", required=False)
+    return choice.lower() in ["yes", "y"] if choice else False
+
+
+def get_date_input_with_retry(prompt: str) -> Optional[datetime]:
+    """Get date input with retry on validation error.
+
+    Args:
+        prompt: Input prompt to display
+
+    Returns:
+        Parsed datetime object or None if skipped/canceled
+    """
+    while True:
+        date_str = get_input(prompt, required=False)
+        if not date_str:
+            return None
+
+        parsed_date = commands.parse_date(date_str)
+        if parsed_date is not None:
+            return parsed_date
+
+        # Invalid date format
+        print(f"{Fore.RED}❌ Invalid date format.{Style.RESET_ALL}")
+        if ask_retry("due date", "2025-12-31 or 2025-12-31 14:30"):
+            continue  # Retry
+        else:
+            return None  # Skip
+
+
+def get_task_id_with_retry(prompt: str) -> Optional[int]:
+    """Get task ID input with retry on validation error.
+
+    Args:
+        prompt: Input prompt to display
+
+    Returns:
+        Valid task ID (positive integer) or None if canceled
+    """
+    while True:
+        task_id_str = get_input(prompt, required=False)
+        if not task_id_str:
+            return None
+
+        try:
+            task_id = int(task_id_str)
+            if task_id <= 0:
+                raise ValueError("Task ID must be positive")
+            return task_id
+        except ValueError:
+            print(
+                f"{Fore.RED}❌ Invalid task ID. "
+                f"Must be a positive number.{Style.RESET_ALL}"
+            )
+            if ask_retry("task ID", "1, 2, 3, etc."):
+                continue  # Retry
+            else:
+                return None  # Cancel
+
+
+def get_title_with_retry() -> Optional[str]:
+    """Get title input with retry on empty value.
+
+    Returns:
+        Valid title string or None if canceled
+    """
+    while True:
+        title = get_input("Title: ", required=False)
+
+        if title and title.strip():
+            return title.strip()
+
+        print(f"{Fore.RED}❌ Title is required and cannot be empty.{Style.RESET_ALL}")
+        if ask_retry("title", "'Complete project report' or 'Buy groceries'"):
+            continue  # Retry
+        else:
+            return None  # Cancel
+
+
 def add_task_interactive() -> None:
     """Interactive flow for adding a task."""
     print(f"\n{Style.BRIGHT}Add New Task{Style.RESET_ALL}")
     print(f"{'-'*60}")
 
-    title = get_input("Title: ", required=True)
+    # Use retry function for title (required field)
+    title = get_title_with_retry()
+    if title is None:
+        print(f"\n{Fore.YELLOW}Task creation canceled.{Style.RESET_ALL}")
+        return
+
     description = get_input("Description (optional): ", required=False) or ""
 
     # Use selection menu for priority
@@ -324,12 +425,12 @@ def add_task_interactive() -> None:
     priority = priority_enum.value
 
     tags = get_input("Tags (comma-separated, optional): ", required=False) or ""
-    due_date = (
-        get_input(
-            "Due Date (YYYY-MM-DD or YYYY-MM-DD HH:MM, optional): ", required=False
-        )
-        or ""
+
+    # Use retry function for due date (with validation)
+    due_date_obj = get_date_input_with_retry(
+        "Due Date (YYYY-MM-DD or YYYY-MM-DD HH:MM, optional): "
     )
+    due_date = due_date_obj.strftime("%Y-%m-%d %H:%M") if due_date_obj else ""
 
     # Use selection menu for recurrence
     recurrence_enum = select_recurrence()
@@ -350,11 +451,11 @@ def add_task_interactive() -> None:
     )
 
     if result.success:
-        print(f"\n{Fore.GREEN}[OK] {result.message}{Style.RESET_ALL}")
+        print(f"\n{Fore.GREEN}✓ {result.message}{Style.RESET_ALL}")
         if result.data:
             print(f"\n{format_task(result.data)}")
     else:
-        print(f"\n{Fore.RED}[ERROR] {result.message}{Style.RESET_ALL}")
+        print(f"\n{Fore.RED}❌ {result.message}{Style.RESET_ALL}")
         for error in result.errors:
             print(f"  {Fore.RED}- {error}{Style.RESET_ALL}")
 
@@ -382,11 +483,10 @@ def update_task_interactive() -> None:
     print(f"\n{Style.BRIGHT}Update Task{Style.RESET_ALL}")
     print(f"{'-'*60}")
 
-    task_id_str = get_input("Task ID: ", required=True)
-    try:
-        task_id = int(task_id_str)
-    except ValueError:
-        print(f"{Fore.RED}Invalid task ID. Must be a number.{Style.RESET_ALL}")
+    # Use retry function for task ID
+    task_id = get_task_id_with_retry("Task ID: ")
+    if task_id is None:
+        print(f"\n{Fore.YELLOW}Update canceled.{Style.RESET_ALL}")
         return
 
     print(f"{Fore.YELLOW}Leave blank to keep current value{Style.RESET_ALL}")
@@ -410,11 +510,14 @@ def update_task_interactive() -> None:
     if tags:
         updates["tags"] = tags
 
-    due_date = get_input(
-        "New Due Date (YYYY-MM-DD or YYYY-MM-DD HH:MM, optional): ", required=False
-    )
-    if due_date:
-        updates["due_date"] = due_date
+    # Ask if user wants to update due date
+    update_due_date = get_input("Update Due Date? (y/n) [n]: ", required=False)
+    if update_due_date and update_due_date.lower() in ["y", "yes"]:
+        due_date_obj = get_date_input_with_retry(
+            "New Due Date (YYYY-MM-DD or YYYY-MM-DD HH:MM): "
+        )
+        if due_date_obj:
+            updates["due_date"] = due_date_obj.strftime("%Y-%m-%d %H:%M")
 
     # Ask if user wants to update recurrence
     update_recurrence = get_input("Update Recurrence? (y/n) [n]: ", required=False)
@@ -444,18 +547,17 @@ def delete_task_interactive() -> None:
     print(f"\n{Style.BRIGHT}Delete Task{Style.RESET_ALL}")
     print(f"{'-'*60}")
 
-    task_id_str = get_input("Task ID: ", required=True)
-    try:
-        task_id = int(task_id_str)
-    except ValueError:
-        print(f"{Fore.RED}Invalid task ID. Must be a number.{Style.RESET_ALL}")
+    # Use retry function for task ID
+    task_id = get_task_id_with_retry("Task ID: ")
+    if task_id is None:
+        print(f"\n{Fore.YELLOW}Deletion canceled.{Style.RESET_ALL}")
         return
 
     # First call to get confirmation prompt
     result = commands.delete_task_command(task_id, confirmed=False)
 
     if not result.success:
-        print(f"{Fore.RED}[ERROR] {result.message}{Style.RESET_ALL}")
+        print(f"{Fore.RED}❌ {result.message}{Style.RESET_ALL}")
         return
 
     # Show task and ask for confirmation
@@ -472,9 +574,9 @@ def delete_task_interactive() -> None:
     result = commands.delete_task_command(task_id, confirmed=True)
 
     if result.success:
-        print(f"\n{Fore.GREEN}[OK] {result.message}{Style.RESET_ALL}")
+        print(f"\n{Fore.GREEN}✓ {result.message}{Style.RESET_ALL}")
     else:
-        print(f"\n{Fore.RED}[ERROR] {result.message}{Style.RESET_ALL}")
+        print(f"\n{Fore.RED}❌ {result.message}{Style.RESET_ALL}")
 
 
 def mark_complete_interactive() -> None:
@@ -482,21 +584,20 @@ def mark_complete_interactive() -> None:
     print(f"\n{Style.BRIGHT}Mark Task Complete{Style.RESET_ALL}")
     print(f"{'-'*60}")
 
-    task_id_str = get_input("Task ID: ", required=True)
-    try:
-        task_id = int(task_id_str)
-    except ValueError:
-        print(f"{Fore.RED}Invalid task ID. Must be a number.{Style.RESET_ALL}")
+    # Use retry function for task ID
+    task_id = get_task_id_with_retry("Task ID: ")
+    if task_id is None:
+        print(f"\n{Fore.YELLOW}Operation canceled.{Style.RESET_ALL}")
         return
 
     result = commands.mark_complete_command(task_id)
 
     if result.success:
-        print(f"\n{Fore.GREEN}[OK] {result.message}{Style.RESET_ALL}")
+        print(f"\n{Fore.GREEN}✓ {result.message}{Style.RESET_ALL}")
         if result.data:
             print(f"\n{format_task(result.data)}")
     else:
-        print(f"\n{Fore.RED}[ERROR] {result.message}{Style.RESET_ALL}")
+        print(f"\n{Fore.RED}❌ {result.message}{Style.RESET_ALL}")
         for error in result.errors:
             print(f"  {Fore.RED}- {error}{Style.RESET_ALL}")
 
@@ -506,11 +607,10 @@ def mark_incomplete_interactive() -> None:
     print(f"\n{Style.BRIGHT}Mark Task Incomplete{Style.RESET_ALL}")
     print(f"{'-'*60}")
 
-    task_id_str = get_input("Task ID: ", required=True)
-    try:
-        task_id = int(task_id_str)
-    except ValueError:
-        print(f"{Fore.RED}Invalid task ID. Must be a number.{Style.RESET_ALL}")
+    # Use retry function for task ID
+    task_id = get_task_id_with_retry("Task ID: ")
+    if task_id is None:
+        print(f"\n{Fore.YELLOW}Operation canceled.{Style.RESET_ALL}")
         return
 
     result = commands.mark_incomplete_command(task_id)
