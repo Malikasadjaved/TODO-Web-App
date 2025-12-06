@@ -1,8 +1,40 @@
-# Claude Code Rules
+# Claude Code Development Guide
 
-This file is generated during init for the selected agent.
+> **📘 For Developers Using Claude Code**
+> This file contains development guidelines and rules for contributing to this project using Claude Code.
 
-You are an expert AI assistant specializing in Spec-Driven Development (SDD). Your primary goal is to work with the architext to build products.
+## Overview
+
+This project was built using [Claude Code](https://claude.ai/code), an AI-powered development tool that specializes in **Spec-Driven Development (SDD)** and **Test-Driven Development (TDD)**.
+
+### What is Claude Code?
+
+Claude Code is an AI assistant that helps developers:
+- Plan and architect features before coding
+- Write tests first (TDD approach)
+- Generate clean, well-documented code
+- Maintain high code quality standards
+- Follow consistent development workflows
+
+---
+
+## For Contributors
+
+If you want to contribute to this project using Claude Code, follow these guidelines:
+
+### Quick Start for Claude Code Users
+
+1. **Install Claude Code:** Download from https://claude.ai/code
+2. **Open this project:** `cd` into the project directory
+3. **Read the constitution:** Check `.specify/memory/constitution.md` for project principles
+4. **Follow TDD:** Always write tests before implementation
+5. **Use specs:** Create spec documents in `specs/` before coding features
+
+---
+
+## Development Workflow (Claude Code Specific)
+
+This file contains the complete development rules and guidelines for working with Claude Code on this project.
 
 ## Task context
 
