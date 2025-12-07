@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 
 from src.todo.models import Task, Priority, RecurrencePattern
 from src.todo import scheduler
+from src.todo import persistence
 
 # Module state - in-memory storage
 tasks: List[Task] = []
@@ -57,6 +58,9 @@ def create_task(
     tasks.append(task)
     task_index[task.id] = len(tasks) - 1
     next_task_id += 1
+
+    # Auto-save after creation (User Story 2)
+    persistence.save_tasks(tasks)
 
     return task
 
@@ -112,6 +116,9 @@ def update_task(task_id: int, **updates) -> bool:
     # Re-validate task (will raise ValueError if invalid)
     task.__post_init__()
 
+    # Auto-save after update (User Story 2)
+    persistence.save_tasks(tasks)
+
     return True
 
 
@@ -135,6 +142,9 @@ def delete_task(task_id: int) -> bool:
     task_index.clear()
     for i, task in enumerate(tasks):
         task_index[task.id] = i
+
+    # Auto-save after deletion (User Story 2)
+    persistence.save_tasks(tasks)
 
     return True
 
@@ -168,8 +178,13 @@ def mark_complete(task_id: int) -> Optional[Task]:
         tasks.append(new_task)
         task_index[new_task.id] = len(tasks) - 1
         globals()["next_task_id"] += 1
+
+        # Auto-save after marking complete + creating recurring instance (User Story 2)
+        persistence.save_tasks(tasks)
         return new_task
 
+    # Auto-save after marking complete (User Story 2)
+    persistence.save_tasks(tasks)
     return None
 
 
@@ -192,5 +207,8 @@ def mark_incomplete(task_id: int) -> bool:
 
     task.status = "incomplete"
     task.completed_date = None
+
+    # Auto-save after marking incomplete (User Story 2)
+    persistence.save_tasks(tasks)
 
     return True

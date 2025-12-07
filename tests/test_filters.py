@@ -228,6 +228,162 @@ class TestCombineFilters:
         assert len(results) == 1
         assert results[0].id == 1
 
+    def test_combine_filters_with_keyword(self):
+        """Test combine_filters with keyword search."""
+        tasks = [
+            Task(id=1, title="Meeting notes", status="incomplete"),
+            Task(id=2, title="Project meeting", status="complete"),
+            Task(id=3, title="Other task", status="incomplete"),
+        ]
+
+        results = filters.combine_filters(tasks, keyword="meeting", status="incomplete")
+        assert len(results) == 1
+        assert results[0].id == 1
+
+    def test_combine_filters_with_status(self):
+        """Test combine_filters with status filter."""
+        tasks = [
+            Task(id=1, title="Task 1", status="complete"),
+            Task(id=2, title="Task 2", status="incomplete"),
+        ]
+
+        results = filters.combine_filters(tasks, status="complete")
+        assert len(results) == 1
+        assert results[0].id == 1
+
+    def test_combine_filters_with_priorities(self):
+        """Test combine_filters with priority filter."""
+        tasks = [
+            Task(id=1, title="High", priority=Priority.HIGH),
+            Task(id=2, title="Medium", priority=Priority.MEDIUM),
+            Task(id=3, title="Low", priority=Priority.LOW),
+        ]
+
+        results = filters.combine_filters(
+            tasks, priorities=[Priority.HIGH, Priority.LOW]
+        )
+        assert len(results) == 2
+        assert results[0].id == 1
+        assert results[1].id == 3
+
+    def test_combine_filters_with_tag(self):
+        """Test combine_filters with tag filter."""
+        tasks = [
+            Task(id=1, title="Task 1", tags=["Work"]),
+            Task(id=2, title="Task 2", tags=["Home"]),
+        ]
+
+        results = filters.combine_filters(tasks, tag="Work")
+        assert len(results) == 1
+        assert results[0].id == 1
+
+    def test_combine_filters_with_date_range(self):
+        """Test combine_filters with date range."""
+        start_date = datetime(2025, 12, 1)
+        end_date = datetime(2025, 12, 31)
+
+        tasks = [
+            Task(id=1, title="Dec task", due_date=datetime(2025, 12, 15)),
+            Task(id=2, title="Jan task", due_date=datetime(2026, 1, 15)),
+        ]
+
+        results = filters.combine_filters(
+            tasks, start_date=start_date, end_date=end_date
+        )
+        assert len(results) == 1
+        assert results[0].id == 1
+
+    def test_combine_filters_overdue_only(self):
+        """Test combine_filters with overdue_only flag."""
+        tasks = [
+            Task(
+                id=1,
+                title="Overdue",
+                due_date=datetime(2020, 1, 1),
+                status="incomplete",
+            ),
+            Task(id=2, title="Future", due_date=datetime(2099, 12, 31)),
+        ]
+
+        results = filters.combine_filters(tasks, overdue_only=True)
+        assert len(results) == 1
+        assert results[0].id == 1
+
+    def test_combine_filters_due_today_only(self):
+        """Test combine_filters with due_today_only flag."""
+        today = datetime.now().replace(hour=14, minute=0, second=0, microsecond=0)
+        tomorrow = today + timedelta(days=1)
+
+        tasks = [
+            Task(id=1, title="Today", due_date=today),
+            Task(id=2, title="Tomorrow", due_date=tomorrow),
+        ]
+
+        results = filters.combine_filters(tasks, due_today_only=True)
+        assert len(results) == 1
+        assert results[0].id == 1
+
+    def test_combine_filters_due_this_week_only(self):
+        """Test combine_filters with due_this_week_only flag."""
+        today = datetime.now()
+        in_week = today + timedelta(days=3)
+        next_week = today + timedelta(days=10)
+
+        tasks = [
+            Task(id=1, title="This week", due_date=in_week),
+            Task(id=2, title="Next week", due_date=next_week),
+        ]
+
+        results = filters.combine_filters(tasks, due_this_week_only=True)
+        assert len(results) == 1
+        assert results[0].id == 1
+
+    def test_combine_filters_all_criteria(self):
+        """Test combine_filters with multiple criteria combined."""
+        tasks = [
+            Task(
+                id=1,
+                title="Perfect match",
+                description="keyword here",
+                status="incomplete",
+                priority=Priority.HIGH,
+                tags=["Work"],
+                due_date=datetime(2025, 12, 15),
+            ),
+            Task(
+                id=2,
+                title="Different task",
+                description="No match",
+                status="incomplete",
+                priority=Priority.HIGH,
+                tags=["Work"],
+                due_date=datetime(2025, 12, 15),
+            ),
+        ]
+
+        results = filters.combine_filters(
+            tasks,
+            keyword="keyword",
+            status="incomplete",
+            priorities=[Priority.HIGH],
+            tag="Work",
+            start_date=datetime(2025, 12, 1),
+            end_date=datetime(2025, 12, 31),
+        )
+        assert len(results) == 1
+        assert results[0].id == 1
+
+    def test_combine_filters_no_filters(self):
+        """Test combine_filters returns all tasks when no filters applied."""
+        tasks = [
+            Task(id=1, title="Task 1"),
+            Task(id=2, title="Task 2"),
+            Task(id=3, title="Task 3"),
+        ]
+
+        results = filters.combine_filters(tasks)
+        assert len(results) == 3
+
 
 class TestSortByDueDate:
     """Test sorting by due date."""
@@ -332,3 +488,96 @@ class TestSortStability:
         assert sorted_tasks[0].id == 1
         assert sorted_tasks[1].id == 2
         assert sorted_tasks[2].id == 3
+
+
+class TestGetFilterSummary:
+    """Test filter summary generation."""
+
+    def test_get_filter_summary_no_filters(self):
+        """Test summary when no filters are applied."""
+        summary = filters.get_filter_summary()
+        assert summary == "No filters applied"
+
+    def test_get_filter_summary_keyword(self):
+        """Test summary with keyword filter."""
+        summary = filters.get_filter_summary(keyword="meeting")
+        assert 'Keyword: "meeting"' in summary
+
+    def test_get_filter_summary_status(self):
+        """Test summary with status filter."""
+        summary = filters.get_filter_summary(status="incomplete")
+        assert "Status: incomplete" in summary
+
+    def test_get_filter_summary_priorities(self):
+        """Test summary with priority filter."""
+        summary = filters.get_filter_summary(
+            priorities=[Priority.HIGH, Priority.MEDIUM]
+        )
+        assert "Priority: HIGH, MEDIUM" in summary
+
+    def test_get_filter_summary_tag(self):
+        """Test summary with tag filter."""
+        summary = filters.get_filter_summary(tag="Work")
+        assert "Tag: Work" in summary
+
+    def test_get_filter_summary_date_range(self):
+        """Test summary with date range filter."""
+        start = datetime(2025, 12, 1)
+        end = datetime(2025, 12, 31)
+        summary = filters.get_filter_summary(start_date=start, end_date=end)
+        assert "Due: 2025-12-01 to 2025-12-31" in summary
+
+    def test_get_filter_summary_overdue_only(self):
+        """Test summary with overdue only flag."""
+        summary = filters.get_filter_summary(overdue_only=True)
+        assert "Overdue only" in summary
+
+    def test_get_filter_summary_due_today_only(self):
+        """Test summary with due today only flag."""
+        summary = filters.get_filter_summary(due_today_only=True)
+        assert "Due today only" in summary
+
+    def test_get_filter_summary_due_this_week_only(self):
+        """Test summary with due this week only flag."""
+        summary = filters.get_filter_summary(due_this_week_only=True)
+        assert "Due this week only" in summary
+
+    def test_get_filter_summary_multiple_filters(self):
+        """Test summary with multiple filters."""
+        summary = filters.get_filter_summary(
+            keyword="test", status="incomplete", priorities=[Priority.HIGH], tag="Work"
+        )
+        assert "Filters:" in summary
+        assert 'Keyword: "test"' in summary
+        assert "Status: incomplete" in summary
+        assert "Priority: HIGH" in summary
+        assert "Tag: Work" in summary
+
+
+class TestGetSortDescription:
+    """Test sort description generation."""
+
+    def test_get_sort_description_due_date(self):
+        """Test description for due date sort."""
+        desc = filters.get_sort_description("due_date")
+        assert desc == "Due Date (earliest first)"
+
+    def test_get_sort_description_priority(self):
+        """Test description for priority sort."""
+        desc = filters.get_sort_description("priority")
+        assert desc == "Priority (HIGH → MEDIUM → LOW)"
+
+    def test_get_sort_description_title(self):
+        """Test description for title sort."""
+        desc = filters.get_sort_description("title")
+        assert desc == "Title (A-Z)"
+
+    def test_get_sort_description_created_date(self):
+        """Test description for created date sort."""
+        desc = filters.get_sort_description("created_date")
+        assert desc == "Created Date (oldest first)"
+
+    def test_get_sort_description_unknown(self):
+        """Test description for unknown sort type."""
+        desc = filters.get_sort_description("invalid_sort")
+        assert desc == "Unknown"

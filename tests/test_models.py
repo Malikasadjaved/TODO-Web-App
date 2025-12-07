@@ -2,7 +2,7 @@
 
 import pytest
 from datetime import datetime
-from src.todo.models import Task, Priority, TaskType
+from src.todo.models import Task, Priority, TaskType, RecurrencePattern, Reminder
 
 
 class TestTaskCreation:
@@ -202,3 +202,85 @@ class TestDueDateFeatures:
         # Task without due date is ACTIVITY
         activity = Task(id=2, title="Activity")
         assert activity.task_type == TaskType.ACTIVITY
+
+
+class TestRecurrenceValidation:
+    """Test recurrence pattern validation."""
+
+    def test_recurrence_requires_due_date(self):
+        """Test that recurrence pattern requires a due date."""
+        with pytest.raises(ValueError, match="Recurrence pattern requires due date"):
+            Task(
+                id=1,
+                title="Recurring without due",
+                recurrence=RecurrencePattern.DAILY,
+            )
+
+    def test_recurrence_with_due_date_is_valid(self):
+        """Test that recurrence with due date is valid."""
+        task = Task(
+            id=1,
+            title="Valid recurring task",
+            due_date=datetime(2025, 12, 31),
+            recurrence=RecurrencePattern.WEEKLY,
+        )
+        assert task.recurrence == RecurrencePattern.WEEKLY
+
+
+class TestReminderValidation:
+    """Test reminder validation."""
+
+    def test_reminder_requires_due_date(self):
+        """Test that reminder_offset requires a due date."""
+        with pytest.raises(ValueError, match="Reminder requires due date"):
+            Task(
+                id=1,
+                title="Reminder without due",
+                reminder_offset=2.0,
+            )
+
+    def test_reminder_with_due_date_is_valid(self):
+        """Test that reminder with due date is valid."""
+        task = Task(
+            id=1,
+            title="Task with reminder",
+            due_date=datetime(2025, 12, 31, 14, 0),
+            reminder_offset=1.0,  # 1 hour before
+        )
+        assert task.reminder_offset == 1.0
+
+
+class TestReminderClass:
+    """Test Reminder class."""
+
+    def test_reminder_creation(self):
+        """Test creating a reminder."""
+        reminder = Reminder(
+            task_id=1,
+            reminder_time=datetime(2025, 12, 31, 13, 0),
+            notification_message="Task due in 1 hour",
+        )
+        assert reminder.task_id == 1
+        assert reminder.status == "pending"
+        assert reminder.notification_message == "Task due in 1 hour"
+
+    def test_reminder_invalid_status(self):
+        """Test that invalid reminder status raises ValueError."""
+        with pytest.raises(
+            ValueError, match="Status must be pending/triggered/cancelled/missed"
+        ):
+            Reminder(
+                task_id=1,
+                reminder_time=datetime(2025, 12, 31),
+                status="invalid",
+            )
+
+    def test_reminder_valid_statuses(self):
+        """Test all valid reminder statuses."""
+        for status in ["pending", "triggered", "cancelled", "missed"]:
+            reminder = Reminder(
+                task_id=1,
+                reminder_time=datetime(2025, 12, 31),
+                status=status,
+            )
+            assert reminder.status == status

@@ -185,7 +185,10 @@ def update_task_command(task_id: int, **updates) -> CommandResult:
             return CommandResult(
                 success=False,
                 message=f"Task #{task_id} not found",
-                errors=["Task does not exist"],
+                errors=[
+                    "Task does not exist. Use option 2 (View All Tasks) "
+                    "to see valid task IDs."
+                ],
             )
 
         # Get updated task
@@ -219,7 +222,10 @@ def delete_task_command(task_id: int, confirmed: bool = False) -> CommandResult:
             return CommandResult(
                 success=False,
                 message=f"Task #{task_id} not found",
-                errors=["Task does not exist"],
+                errors=[
+                    "Task does not exist. Use option 2 (View All Tasks) "
+                    "to see valid task IDs."
+                ],
             )
 
         if not confirmed:
@@ -268,7 +274,10 @@ def mark_complete_command(task_id: int) -> CommandResult:
                 return CommandResult(
                     success=False,
                     message=f"Task #{task_id} not found",
-                    errors=["Task does not exist"],
+                    errors=[
+                        "Task does not exist. Use option 2 (View All Tasks) "
+                        "to see valid task IDs."
+                    ],
                 )
             if task.status != "complete":
                 return CommandResult(
@@ -313,7 +322,10 @@ def mark_incomplete_command(task_id: int) -> CommandResult:
             return CommandResult(
                 success=False,
                 message=f"Task #{task_id} not found",
-                errors=["Task does not exist"],
+                errors=[
+                    "Task does not exist. Use option 2 (View All Tasks) "
+                    "to see valid task IDs."
+                ],
             )
 
         task = storage.get_task(task_id)
