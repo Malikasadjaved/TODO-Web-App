@@ -1,3 +1,52 @@
+# Todo App - Phase II: Full-Stack Web Application
+
+## ⚠️ IMPORTANT: Monorepo Structure
+
+This project has evolved from Phase I (CLI) to Phase II (Full-Stack Web).
+
+- **Phase I Code**: Located in `/phase-1/` directory (preserved for reference)
+- **Phase II Code**: Monorepo with `/backend/` (FastAPI) and `/frontend/` (Next.js)
+
+## Spec-Kit Plus Organization
+
+All specifications are organized in `/specs/`:
+- `/specs/overview.md` - Project overview and phase status
+- `/specs/features/` - Feature specifications (what to build)
+- `/specs/api/` - REST API endpoint specifications
+- `/specs/database/` - Database schema and models
+- `/specs/ui/` - Frontend component and page specs
+
+Reference specs with: `@specs/features/task-crud-web.md`
+
+## Development Workflow
+
+1. Read relevant spec before implementing
+2. Backend development: See `@backend/CLAUDE.md`
+3. Frontend development: See `@frontend/CLAUDE.md`
+4. Always test authentication flow end-to-end
+
+## Running the Application
+
+**Local Development:**
+```bash
+# Backend
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn src.api.main:app --reload
+
+# Frontend (separate terminal)
+cd frontend
+npm install
+npm run dev
+
+Docker Compose:
+docker-compose up
+
+
+
+
 # Python CLI Todo Application
 
 [![Tests](https://img.shields.io/badge/tests-317%20passing-brightgreen)](https://github.com/Malikasadjaved/Python-Todo-Cli-App)
