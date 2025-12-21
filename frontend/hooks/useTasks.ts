@@ -24,7 +24,8 @@ import type { Task } from '@/types/api'
 const taskKeys = {
   all: ['tasks'] as const,
   lists: () => [...taskKeys.all, 'list'] as const,
-  list: (userId: string) => [...taskKeys.lists(), userId] as const,
+  list: (userId: string, search?: string, status?: string, priority?: string, tags?: string, sort?: string, order?: string) =>
+    [...taskKeys.lists(), userId, search, status, priority, tags, sort, order] as const,
   details: () => [...taskKeys.all, 'detail'] as const,
   detail: (userId: string, taskId: number) =>
     [...taskKeys.details(), userId, taskId] as const,
@@ -34,8 +35,26 @@ const taskKeys = {
 // API Functions
 // ============================================================================
 
-async function fetchTasks(userId: string): Promise<Task[]> {
-  return fetchWithAuth<Task[]>(`/api/${userId}/tasks`)
+async function fetchTasks(
+  userId: string,
+  search?: string,
+  status?: string,
+  priority?: string,
+  tags?: string,
+  sort?: string,
+  order?: string
+): Promise<Task[]> {
+  const params = new URLSearchParams()
+  if (search) params.append('search', search)
+  if (status) params.append('status', status)
+  if (priority) params.append('priority', priority)
+  if (tags) params.append('tags', tags)
+  if (sort) params.append('sort', sort)
+  if (order) params.append('order', order)
+
+  const queryString = params.toString()
+  const url = `/api/${userId}/tasks${queryString ? `?${queryString}` : ''}`
+  return fetchWithAuth<Task[]>(url)
 }
 
 async function fetchTask(userId: string, taskId: number): Promise<Task> {
@@ -106,17 +125,37 @@ async function toggleTaskStatus(
  * - Automatic caching (5 minutes)
  * - Auto-refetch on window focus
  * - Loading and error states
+ * - Optional search filtering and filters
+ * - Optional sorting by due_date, priority, created_at, or title
  *
  * @param userId - User ID from authentication
+ * @param search - Optional search query to filter tasks by title/description
+ * @param status - Optional status filter (INCOMPLETE, COMPLETE)
+ * @param priority - Optional priority filter (LOW, MEDIUM, HIGH)
+ * @param tags - Optional comma-separated tags filter
+ * @param sort - Optional sort field (due_date, priority, created_at, title)
+ * @param order - Optional sort order (asc, desc)
  * @returns Query result with tasks array
  *
  * @example
  * const { data: tasks, isLoading, error } = useTasks(user.id)
+ *
+ * @example
+ * // With filters and sorting
+ * const { data: tasks } = useTasks(user.id, searchQuery, 'INCOMPLETE', 'HIGH', 'Work,Home', 'due_date', 'asc')
  */
-export function useTasks(userId: string | undefined) {
+export function useTasks(
+  userId: string | undefined,
+  search?: string,
+  status?: string,
+  priority?: string,
+  tags?: string,
+  sort?: string,
+  order?: string
+) {
   return useQuery({
-    queryKey: taskKeys.list(userId || ''),
-    queryFn: () => fetchTasks(userId!),
+    queryKey: taskKeys.list(userId || '', search, status, priority, tags, sort, order),
+    queryFn: () => fetchTasks(userId!, search, status, priority, tags, sort, order),
     enabled: !!userId, // Only run if userId exists
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,

@@ -110,7 +110,7 @@ const fetchSession = async (): Promise<User | null> => {
  * Sign in with email and password
  */
 const signIn = async (input: SignInInput): Promise<AuthResponse> => {
-  const response = await fetch(`${env.BETTER_AUTH_URL}/sign-in`, {
+  const response = await fetch(`${env.NEXT_PUBLIC_BETTER_AUTH_URL}/sign-in`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -130,7 +130,7 @@ const signIn = async (input: SignInInput): Promise<AuthResponse> => {
  * Sign up with email, password, and name
  */
 const signUp = async (input: SignUpInput): Promise<AuthResponse> => {
-  const response = await fetch(`${env.BETTER_AUTH_URL}/sign-up`, {
+  const response = await fetch(`${env.NEXT_PUBLIC_BETTER_AUTH_URL}/sign-up`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -154,7 +154,7 @@ const signOut = async (): Promise<void> => {
 
   // Optionally notify backend
   try {
-    await fetch(`${env.BETTER_AUTH_URL}/sign-out`, {
+    await fetch(`${env.NEXT_PUBLIC_BETTER_AUTH_URL}/sign-out`, {
       method: 'POST',
     })
   } catch {
@@ -207,7 +207,7 @@ export const useAuth = () => {
   // Mutation: Sign in
   const signInMutation = useMutation({
     mutationFn: signIn,
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Update session cache
       queryClient.setQueryData(['session'], data.user)
       // Redirect to dashboard
@@ -218,7 +218,7 @@ export const useAuth = () => {
   // Mutation: Sign up
   const signUpMutation = useMutation({
     mutationFn: signUp,
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Update session cache
       queryClient.setQueryData(['session'], data.user)
       // Redirect to dashboard

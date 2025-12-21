@@ -11,7 +11,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from src.api.config import settings
-from src.api.models import User, Task, Tag
+from src.api.models import User
 
 
 @pytest.fixture(name="test_db_session")
@@ -197,7 +197,6 @@ async def client():
     from src.api.main import app
 
     async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test"
+        transport=ASGITransport(app=app), base_url="http://test"
     ) as client_instance:
         yield client_instance

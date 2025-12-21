@@ -13,7 +13,7 @@
 'use client'
 
 import { useState, FormEvent, useEffect } from 'react'
-import { Modal } from '@/components/Modal'
+import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
@@ -41,9 +41,9 @@ export function TaskForm({ isOpen, onClose, userId, task }: TaskFormProps) {
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM')
   const [dueDate, setDueDate] = useState('')
   const [tags, setTags] = useState('')
-  const [recurrence, setRecurrence] = useState<
-    'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'
-  >('NONE')
+  const [recurrence, setRecurrence] = useState<'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'>(
+    'NONE'
+  )
 
   // Validation errors
   const [errors, setErrors] = useState<{
@@ -111,8 +111,8 @@ export function TaskForm({ isOpen, onClose, userId, task }: TaskFormProps) {
     // Parse tags
     const tagArray = tags
       .split(',')
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0)
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0)
 
     try {
       if (isEditMode) {
@@ -144,8 +144,7 @@ export function TaskForm({ isOpen, onClose, userId, task }: TaskFormProps) {
 
       onClose()
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to save task'
+      const message = error instanceof Error ? error.message : 'Failed to save task'
       toast.error(message)
     }
   }
@@ -161,18 +160,13 @@ export function TaskForm({ isOpen, onClose, userId, task }: TaskFormProps) {
           type="text"
           placeholder="Enter task title..."
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={e => setTitle(e.target.value)}
           state={errors.title ? 'error' : 'default'}
           error={errors.title}
           fullWidth
           required
           prefixIcon={
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -185,12 +179,10 @@ export function TaskForm({ isOpen, onClose, userId, task }: TaskFormProps) {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-white/80 mb-2">
-            Description
-          </label>
+          <label className="block text-sm font-medium text-white/80 mb-2">Description</label>
           <textarea
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={e => setDescription(e.target.value)}
             placeholder="Enter task description..."
             rows={4}
             className={`
@@ -204,45 +196,33 @@ export function TaskForm({ isOpen, onClose, userId, task }: TaskFormProps) {
               resize-none
             `}
           />
-          {errors.description && (
-            <p className="text-red-400 text-sm mt-1">{errors.description}</p>
-          )}
+          {errors.description && <p className="text-red-400 text-sm mt-1">{errors.description}</p>}
         </div>
 
         {/* Priority */}
-        <div>
-          <label className="block text-sm font-medium text-white/80 mb-2">
-            Priority
-          </label>
-          <Select
-            value={priority}
-            onChange={(e) =>
-              setPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH')
-            }
-            fullWidth
-          >
-            <option value="LOW">Low Priority</option>
-            <option value="MEDIUM">Medium Priority</option>
-            <option value="HIGH">High Priority</option>
-          </Select>
-        </div>
+        <Select
+          label="Priority"
+          value={priority}
+          onChange={(value) => setPriority(value as 'LOW' | 'MEDIUM' | 'HIGH')}
+          options={[
+            { value: 'LOW', label: 'Low Priority' },
+            { value: 'MEDIUM', label: 'Medium Priority' },
+            { value: 'HIGH', label: 'High Priority' },
+          ]}
+          fullWidth
+        />
 
         {/* Due Date */}
         <Input
           label="Due Date"
           type="date"
           value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
+          onChange={e => setDueDate(e.target.value)}
           state={errors.dueDate ? 'error' : 'default'}
           error={errors.dueDate}
           fullWidth
           prefixIcon={
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -259,15 +239,10 @@ export function TaskForm({ isOpen, onClose, userId, task }: TaskFormProps) {
           type="text"
           placeholder="Work, Personal, Urgent (comma-separated)"
           value={tags}
-          onChange={(e) => setTags(e.target.value)}
+          onChange={e => setTags(e.target.value)}
           fullWidth
           prefixIcon={
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -279,31 +254,21 @@ export function TaskForm({ isOpen, onClose, userId, task }: TaskFormProps) {
         />
 
         {/* Recurrence */}
-        <div>
-          <label className="block text-sm font-medium text-white/80 mb-2">
-            Recurrence
-          </label>
-          <Select
-            value={recurrence}
-            onChange={(e) =>
-              setRecurrence(
-                e.target.value as
-                  | 'NONE'
-                  | 'DAILY'
-                  | 'WEEKLY'
-                  | 'MONTHLY'
-                  | 'YEARLY'
-              )
-            }
-            fullWidth
-          >
-            <option value="NONE">No Recurrence</option>
-            <option value="DAILY">Daily</option>
-            <option value="WEEKLY">Weekly</option>
-            <option value="MONTHLY">Monthly</option>
-            <option value="YEARLY">Yearly</option>
-          </Select>
-        </div>
+        <Select
+          label="Recurrence"
+          value={recurrence}
+          onChange={(value) =>
+            setRecurrence(value as 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY')
+          }
+          options={[
+            { value: 'NONE', label: 'No Recurrence' },
+            { value: 'DAILY', label: 'Daily' },
+            { value: 'WEEKLY', label: 'Weekly' },
+            { value: 'MONTHLY', label: 'Monthly' },
+            { value: 'YEARLY', label: 'Yearly' },
+          ]}
+          fullWidth
+        />
 
         {/* Action Buttons */}
         <div className="flex gap-3 pt-4">

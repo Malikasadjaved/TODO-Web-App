@@ -43,7 +43,7 @@ async def test_create_tag(
     response = await client.post(
         "/api/test_user_123/tags",
         json=tag_data,
-        headers={"Authorization": f"Bearer {test_jwt_token}"}
+        headers={"Authorization": f"Bearer {test_jwt_token}"},
     )
 
     assert response.status_code == 201
@@ -92,7 +92,7 @@ async def test_duplicate_tag(
     response = await client.post(
         "/api/test_user_123/tags",
         json=tag_data,
-        headers={"Authorization": f"Bearer {test_jwt_token}"}
+        headers={"Authorization": f"Bearer {test_jwt_token}"},
     )
 
     assert response.status_code == 400
@@ -145,28 +145,21 @@ async def test_delete_tag_removes_from_tasks(
 
     # Delete tag
     response = await client.delete(
-        f"/api/test_user_123/tags/{tag.id}",
-        headers={"Authorization": f"Bearer {test_jwt_token}"}
+        f"/api/test_user_123/tags/{tag.id}", headers={"Authorization": f"Bearer {test_jwt_token}"}
     )
 
     assert response.status_code == 200
 
     # Verify tag deleted
-    tag_in_db = test_db_session.exec(
-        select(Tag).where(Tag.id == tag.id)
-    ).first()
+    tag_in_db = test_db_session.exec(select(Tag).where(Tag.id == tag.id)).first()
     assert tag_in_db is None
 
     # Verify TaskTag association deleted (cascade)
-    task_tag_in_db = test_db_session.exec(
-        select(TaskTag).where(TaskTag.tag_id == tag.id)
-    ).first()
+    task_tag_in_db = test_db_session.exec(select(TaskTag).where(TaskTag.tag_id == tag.id)).first()
     assert task_tag_in_db is None
 
     # Verify task still exists (not deleted)
-    task_in_db = test_db_session.exec(
-        select(Task).where(Task.id == task.id)
-    ).first()
+    task_in_db = test_db_session.exec(select(Task).where(Task.id == task.id)).first()
     assert task_in_db is not None
 
 
@@ -210,8 +203,7 @@ async def test_list_tags_user_isolation(
 
     # User A requests their tags
     response_a = await client.get(
-        "/api/test_user_123/tags",
-        headers={"Authorization": f"Bearer {test_jwt_token}"}
+        "/api/test_user_123/tags", headers={"Authorization": f"Bearer {test_jwt_token}"}
     )
 
     assert response_a.status_code == 200
@@ -224,8 +216,7 @@ async def test_list_tags_user_isolation(
 
     # User B requests their tags
     response_b = await client.get(
-        "/api/test_user_456/tags",
-        headers={"Authorization": f"Bearer {test_user_2_jwt_token}"}
+        "/api/test_user_456/tags", headers={"Authorization": f"Bearer {test_user_2_jwt_token}"}
     )
 
     assert response_b.status_code == 200

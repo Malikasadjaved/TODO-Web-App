@@ -238,40 +238,71 @@ export function TaskCard({ task, onClick, onDelete, onToggleStatus }: TaskCardPr
         </div>
       )}
 
-      {/* Footer: Due Date + Status */}
+      {/* Footer: Due Date + Recurrence + Status */}
       <div className="flex items-center justify-between gap-3 pt-3 border-t border-purple-400/10">
-        {/* Due Date */}
-        {task.due_date ? (
-          <div
-            className={`flex items-center gap-2 ${
-              isOverdue ? 'text-red-400' : 'text-white/60'
-            }`}
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        {/* Due Date & Recurrence */}
+        <div className="flex items-center gap-3">
+          {/* Due Date */}
+          {task.due_date ? (
+            <div
+              className={`flex items-center gap-2 ${
+                isOverdue ? 'text-red-400' : 'text-white/60'
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            <span className="text-sm font-medium">
-              {formatDueDate(task.due_date)}
-            </span>
-            {isOverdue && (
-              <span className="text-xs bg-red-500/20 px-2 py-0.5 rounded">
-                Overdue
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span className="text-sm font-medium">
+                {formatDueDate(task.due_date)}
               </span>
-            )}
-          </div>
-        ) : (
-          <div className="text-white/40 text-sm">No due date</div>
-        )}
+              {isOverdue && (
+                <span className="text-xs bg-red-500/20 px-2 py-0.5 rounded">
+                  Overdue
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="text-white/40 text-sm">No due date</div>
+          )}
+
+          {/* Recurrence Indicator */}
+          {task.recurrence && task.recurrence !== 'NONE' && (
+            <div
+              className="flex items-center gap-1.5 text-purple-300"
+              title={`Repeats ${task.recurrence.toLowerCase()}`}
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              <span className="text-xs font-medium">
+                {task.recurrence === 'DAILY' && 'Daily'}
+                {task.recurrence === 'WEEKLY' && 'Weekly'}
+                {task.recurrence === 'MONTHLY' && 'Monthly'}
+                {task.recurrence === 'YEARLY' && 'Yearly'}
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Status Badge */}
         <Badge

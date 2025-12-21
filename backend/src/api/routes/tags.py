@@ -109,8 +109,7 @@ async def create_tag(
 
     if existing_tag:
         raise HTTPException(
-            status_code=400,
-            detail=f"Tag '{tag_data.name}' already exists for this user"
+            status_code=400, detail=f"Tag '{tag_data.name}' already exists for this user"
         )
 
     # Step 3: Create tag (associate with token user_id)
@@ -151,9 +150,7 @@ async def delete_tag(
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Step 2: Fetch tag (verify ownership)
-    tag = session.exec(
-        select(Tag).where(Tag.id == tag_id, Tag.user_id == current_user)
-    ).first()
+    tag = session.exec(select(Tag).where(Tag.id == tag_id, Tag.user_id == current_user)).first()
 
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")

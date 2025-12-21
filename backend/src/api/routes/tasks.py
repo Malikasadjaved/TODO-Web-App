@@ -13,7 +13,7 @@ All endpoints must:
 from typing import List
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, select, case
 
 from ..auth import get_current_user
 from ..db import get_session
@@ -58,11 +58,25 @@ class UpdateTaskRequest:
 @router.get("/api/{user_id}/tasks")
 async def list_tasks(
     user_id: str,
+    search: str | None = None,
+    status: TaskStatus | None = None,
+    priority: TaskPriority | None = None,
+    tags: str | None = None,
+    sort: str | None = None,
+    order: str = "asc",
     current_user: str = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> List[Task]:
     """
     List all tasks for the authenticated user.
+
+    Query Parameters:
+    - search: Optional keyword to filter tasks by title or description (case-insensitive)
+    - status: Optional status filter (INCOMPLETE, COMPLETE)
+    - priority: Optional priority filter (LOW, MEDIUM, HIGH)
+    - tags: Optional comma-separated tags filter (OR logic - any tag matches)
+    - sort: Optional sort field (due_date, priority, created_at, title)
+    - order: Sort order (asc or desc, default: asc)
 
     Security:
     - Requires valid JWT token
@@ -73,8 +87,85 @@ async def list_tasks(
     if user_id != current_user:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    # Fetch tasks (filter by token user_id)
+    # Build query (filter by token user_id)
     statement = select(Task).where(Task.user_id == current_user)
+
+    # Add search filter if provided (case-insensitive search in title and description)
+    if search:
+        search_pattern = f"%{search}%"
+        statement = statement.where(
+            (Task.title.ilike(search_pattern)) | (Task.description.ilike(search_pattern))
+        )
+
+    # Add status filter if provided
+    if status:
+        statement = statement.where(Task.status == status)
+
+    # Add priority filter if provided
+    if priority:
+        statement = statement.where(Task.priority == priority)
+
+    # Add tags filter if provided (OR logic - task has ANY of the specified tags)
+    if tags:
+        from ..models import Tag, TaskTag
+
+        tag_list = [tag.strip() for tag in tags.split(",")]
+
+        # Join with TaskTag and Tag to filter by tag names
+        # Find task IDs that have any of the specified tags
+        tag_subquery = (
+            select(TaskTag.task_id)
+            .join(Tag, TaskTag.tag_id == Tag.id)
+            .where(Tag.name.in_(tag_list))
+            .where(Tag.user_id == current_user)
+        )
+
+        statement = statement.where(Task.id.in_(tag_subquery))
+
+    # Add sorting if provided
+    if sort:
+        # For priority sorting, default to descending (HIGH first) for better UX
+        # For other fields, default to ascending
+        effective_order = order
+        if sort == "priority" and order == "asc":
+            # No explicit order provided for priority, default to descending
+            effective_order = "desc"
+
+        if sort == "due_date":
+            # Sort by due_date with NULLS LAST for ascending, NULLS LAST for descending
+            if order == "desc":
+                statement = statement.order_by(Task.due_date.desc().nullslast())
+            else:
+                statement = statement.order_by(Task.due_date.asc().nullslast())
+
+        elif sort == "priority":
+            # Sort by priority: HIGH (3) → MEDIUM (2) → LOW (1)
+            # Use CASE to map priority strings to numeric values for proper sorting
+            # Default to descending (HIGH first) for better UX
+            priority_order = case(
+                (Task.priority == TaskPriority.HIGH, 3),
+                (Task.priority == TaskPriority.MEDIUM, 2),
+                (Task.priority == TaskPriority.LOW, 1),
+                else_=0,
+            )
+            # Use effective_order which defaults to "desc" for priority
+            if effective_order == "asc":
+                statement = statement.order_by(priority_order.asc())
+            else:
+                statement = statement.order_by(priority_order.desc())
+
+        elif sort == "created_at":
+            if order == "desc":
+                statement = statement.order_by(Task.created_at.desc())
+            else:
+                statement = statement.order_by(Task.created_at.asc())
+
+        elif sort == "title":
+            if order == "desc":
+                statement = statement.order_by(Task.title.desc())
+            else:
+                statement = statement.order_by(Task.title.asc())
+
     tasks = session.exec(statement).all()
 
     return list(tasks)
@@ -105,9 +196,7 @@ async def get_task(
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Fetch task
-    statement = select(Task).where(
-        Task.id == task_id, Task.user_id == current_user
-    )
+    statement = select(Task).where(Task.id == task_id, Task.user_id == current_user)
     task = session.exec(statement).first()
 
     if not task:
@@ -144,13 +233,23 @@ async def create_task(
     if "title" not in request or not request["title"]:
         raise HTTPException(status_code=400, detail="Title is required")
 
+    # Parse due_date if present (convert ISO string to datetime)
+    due_date = None
+    if "due_date" in request and request["due_date"]:
+        try:
+            due_date = datetime.fromisoformat(request["due_date"].replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            raise HTTPException(
+                status_code=400, detail="Invalid due_date format. Use ISO 8601 format."
+            )
+
     # Create task
     task = Task(
         user_id=current_user,  # CRITICAL: Use token user_id
         title=request["title"],
         description=request.get("description"),
         priority=request.get("priority", TaskPriority.MEDIUM),
-        due_date=request.get("due_date"),
+        due_date=due_date,
         recurrence=request.get("recurrence", TaskRecurrence.NONE),
         status=TaskStatus.INCOMPLETE,
         created_at=datetime.utcnow(),
@@ -190,9 +289,7 @@ async def update_task(
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Fetch task
-    statement = select(Task).where(
-        Task.id == task_id, Task.user_id == current_user
-    )
+    statement = select(Task).where(Task.id == task_id, Task.user_id == current_user)
     task = session.exec(statement).first()
 
     if not task:
@@ -210,7 +307,16 @@ async def update_task(
     if "priority" in request:
         task.priority = request["priority"]
     if "due_date" in request:
-        task.due_date = request["due_date"]
+        # Parse due_date if present (convert ISO string to datetime)
+        if request["due_date"]:
+            try:
+                task.due_date = datetime.fromisoformat(request["due_date"].replace("Z", "+00:00"))
+            except (ValueError, AttributeError):
+                raise HTTPException(
+                    status_code=400, detail="Invalid due_date format. Use ISO 8601 format."
+                )
+        else:
+            task.due_date = None
     if "recurrence" in request:
         task.recurrence = request["recurrence"]
 
@@ -248,9 +354,7 @@ async def delete_task(
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Fetch task
-    statement = select(Task).where(
-        Task.id == task_id, Task.user_id == current_user
-    )
+    statement = select(Task).where(Task.id == task_id, Task.user_id == current_user)
     task = session.exec(statement).first()
 
     if not task:
@@ -289,9 +393,7 @@ async def toggle_task_status(
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Fetch task
-    statement = select(Task).where(
-        Task.id == task_id, Task.user_id == current_user
-    )
+    statement = select(Task).where(Task.id == task_id, Task.user_id == current_user)
     task = session.exec(statement).first()
 
     if not task:
@@ -306,6 +408,28 @@ async def toggle_task_status(
     # Set or clear completed_at based on status
     if request["status"] == TaskStatus.COMPLETE:
         task.completed_at = datetime.utcnow()
+
+        # Handle recurring tasks
+        if task.recurrence != TaskRecurrence.NONE:
+            from datetime import timedelta
+
+            # Save completion time
+            task.last_completed_at = datetime.utcnow()
+
+            # Calculate next due_date based on recurrence type
+            if task.due_date:
+                if task.recurrence == TaskRecurrence.DAILY:
+                    task.due_date = task.due_date + timedelta(days=1)
+                elif task.recurrence == TaskRecurrence.WEEKLY:
+                    task.due_date = task.due_date + timedelta(days=7)
+                elif task.recurrence == TaskRecurrence.MONTHLY:
+                    task.due_date = task.due_date + timedelta(days=30)
+                elif task.recurrence == TaskRecurrence.YEARLY:
+                    task.due_date = task.due_date + timedelta(days=365)
+
+            # Reset status to INCOMPLETE for next occurrence
+            task.status = TaskStatus.INCOMPLETE
+            task.completed_at = None  # Clear completed_at since it's now incomplete again
     else:
         task.completed_at = None
 

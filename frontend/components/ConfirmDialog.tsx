@@ -11,7 +11,7 @@
 
 'use client'
 
-import { Modal } from '@/components/Modal'
+import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 
 interface ConfirmDialogProps {
@@ -64,9 +64,7 @@ export function ConfirmDialog({
               </svg>
               <div>
                 <h4 className="text-red-300 font-semibold mb-1">Warning</h4>
-                <p className="text-red-200/80 text-sm">
-                  This action cannot be undone.
-                </p>
+                <p className="text-red-200/80 text-sm">This action cannot be undone.</p>
               </div>
             </div>
           </div>

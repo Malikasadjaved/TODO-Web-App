@@ -1,13 +1,13 @@
 /**
  * Better Auth API route handler.
  *
- * This catch-all route handles all Better Auth requests:
+ * This catch-all route proxies all Better Auth requests to the backend:
  * - POST /api/auth/sign-up (user registration)
  * - POST /api/auth/sign-in (user login)
  * - POST /api/auth/sign-out (user logout)
  * - GET /api/auth/session (get current session)
  *
- * Better Auth automatically generates JWT tokens and handles authentication.
+ * All requests are forwarded to: http://localhost:8000/api/auth/*
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -56,190 +56,70 @@ export async function DELETE(request: NextRequest) {
 }
 
 /**
- * Forward all auth requests to Better Auth library.
+ * Proxy all auth requests to the backend API.
  *
- * Better Auth will:
- * 1. Validate request (email, password, etc.)
- * 2. Hash passwords (for sign-up)
- * 3. Verify credentials (for sign-in)
- * 4. Generate JWT token with payload: { user_id, email, exp, iat }
- * 5. Return token to frontend
+ * Frontend request flow:
+ * 1. User submits form on /signup
+ * 2. useSignUp() calls POST /api/auth/sign-up
+ * 3. This handler proxies to backend: http://localhost:8000/api/auth/sign-up
+ * 4. Backend validates, creates user, returns JWT token
+ * 5. Frontend stores token in localStorage
+ * 6. Frontend redirects to /dashboard
  *
  * @param request - Next.js request object
- * @returns Next.js response with auth result
+ * @returns Response from backend
  */
 async function handleAuthRequest(request: NextRequest): Promise<NextResponse> {
   try {
-    // Extract path from URL (e.g., /api/auth/sign-in → sign-in)
+    // Extract the auth endpoint path (e.g., /api/auth/sign-in → sign-in)
     const url = new URL(request.url)
-    const path = url.pathname.replace('/api/auth/', '')
+    const path = url.pathname.replace('/api/auth', '') // Remove /api/auth prefix
 
-    // For this phase, we'll implement a simplified auth flow
-    // In production, you would integrate with Better Auth's server SDK
+    // Build backend URL
+    const backendUrl = `${env.NEXT_PUBLIC_API_URL}/api/auth${path}`
 
-    if (path === 'sign-up') {
-      return handleSignUp(request)
+    console.log(`[Auth Proxy] ${request.method} ${path} → ${backendUrl}`)
+
+    // Prepare request body
+    let body: string | undefined
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      body = await request.text()
     }
 
-    if (path === 'sign-in') {
-      return handleSignIn(request)
+    // Prepare headers for backend request
+    const headers = new Headers()
+    headers.set('Content-Type', 'application/json')
+
+    // Forward Authorization header if present
+    const authHeader = request.headers.get('authorization')
+    if (authHeader) {
+      headers.set('authorization', authHeader)
     }
 
-    if (path === 'sign-out') {
-      return handleSignOut()
-    }
+    // Make request to backend
+    const response = await fetch(backendUrl, {
+      method: request.method,
+      headers,
+      body,
+    })
 
-    if (path === 'session') {
-      return handleSession(request)
-    }
+    // Get response body
+    const responseBody = await response.text()
 
-    return NextResponse.json(
-      { error: 'Auth route not found' },
-      { status: 404 }
-    )
-  } catch (error) {
-    console.error('Auth error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
+    console.log(`[Auth Proxy] Response: ${response.status}`)
 
-/**
- * Handle user registration.
- *
- * For Phase 2, this is a placeholder that returns a mock JWT token.
- * In production, this would:
- * 1. Create user in database via backend API
- * 2. Hash password
- * 3. Generate JWT token
- */
-async function handleSignUp(request: NextRequest): Promise<NextResponse> {
-  const body = await request.json()
-  const { email, password, name } = body
-
-  // Validation
-  if (!email || !password || !name) {
-    return NextResponse.json(
-      { error: 'Email, password, and name are required' },
-      { status: 400 }
-    )
-  }
-
-  // TODO: Integrate with backend /api/auth/sign-up endpoint
-  // For now, return mock response
-
-  // Generate mock JWT token (in production, backend generates this)
-  const mockToken = generateMockJWT(email)
-
-  return NextResponse.json({
-    user: {
-      id: 'user_' + Date.now(),
-      email,
-      name,
-    },
-    token: mockToken,
-  })
-}
-
-/**
- * Handle user login.
- *
- * For Phase 2, this is a placeholder that returns a mock JWT token.
- * In production, this would:
- * 1. Verify credentials via backend API
- * 2. Return JWT token from backend
- */
-async function handleSignIn(request: NextRequest): Promise<NextResponse> {
-  const body = await request.json()
-  const { email, password } = body
-
-  // Validation
-  if (!email || !password) {
-    return NextResponse.json(
-      { error: 'Email and password are required' },
-      { status: 400 }
-    )
-  }
-
-  // TODO: Integrate with backend /api/auth/sign-in endpoint
-  // For now, return mock response
-
-  // Generate mock JWT token (in production, backend generates this)
-  const mockToken = generateMockJWT(email)
-
-  return NextResponse.json({
-    user: {
-      id: 'user_' + Date.now(),
-      email,
-    },
-    token: mockToken,
-  })
-}
-
-/**
- * Handle user logout.
- */
-async function handleSignOut(): Promise<NextResponse> {
-  // For JWT-based auth, logout is handled client-side (remove token)
-  return NextResponse.json({ success: true })
-}
-
-/**
- * Handle session check.
- */
-async function handleSession(request: NextRequest): Promise<NextResponse> {
-  const authHeader = request.headers.get('authorization')
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ session: null })
-  }
-
-  const token = authHeader.split(' ')[1]
-
-  try {
-    // Decode JWT (not verifying for mock - in production, verify with backend)
-    const payload = JSON.parse(atob(token.split('.')[1]))
-
-    return NextResponse.json({
-      session: {
-        user: {
-          id: payload.user_id,
-          email: payload.email,
-        },
+    // Return response with same status
+    return new NextResponse(responseBody, {
+      status: response.status,
+      headers: {
+        'Content-Type': 'application/json',
       },
     })
-  } catch {
-    return NextResponse.json({ session: null })
+  } catch (error) {
+    console.error('[Auth Proxy] Error:', error)
+    return NextResponse.json(
+      { error: 'Authentication service unavailable', details: String(error) },
+      { status: 503 }
+    )
   }
-}
-
-/**
- * Generate mock JWT token for development.
- *
- * IMPORTANT: In production, JWT tokens MUST be generated by the backend
- * using the BETTER_AUTH_SECRET to ensure security.
- *
- * This mock function is ONLY for Phase 2 frontend development.
- */
-function generateMockJWT(email: string): string {
-  const header = {
-    alg: 'HS256',
-    typ: 'JWT',
-  }
-
-  const payload = {
-    user_id: 'user_' + Date.now(),
-    email,
-    exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour
-    iat: Math.floor(Date.now() / 1000),
-  }
-
-  // Mock JWT (not properly signed - for development only)
-  const encodedHeader = btoa(JSON.stringify(header))
-  const encodedPayload = btoa(JSON.stringify(payload))
-  const mockSignature = btoa('mock_signature')
-
-  return `${encodedHeader}.${encodedPayload}.${mockSignature}`
 }

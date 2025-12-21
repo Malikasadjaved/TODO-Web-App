@@ -207,7 +207,9 @@ async def test_invalid_bearer_format_raises_401(test_jwt_token: str):
             await get_current_user(authorization=invalid_format)
 
         assert exc_info.value.status_code == 401
-        assert "invalid" in exc_info.value.detail.lower() or "format" in exc_info.value.detail.lower()
+        assert (
+            "invalid" in exc_info.value.detail.lower() or "format" in exc_info.value.detail.lower()
+        )
 
 
 # ============================================================================

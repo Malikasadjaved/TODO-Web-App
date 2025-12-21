@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # CORS
     frontend_url: str = "http://localhost:3000"
 
+    # Debug mode (show detailed errors in responses)
+    debug: bool = False
+
     @field_validator("better_auth_secret")
     @classmethod
     def validate_secret_length(cls, v: str) -> str:
@@ -33,7 +36,7 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"BETTER_AUTH_SECRET must be at least 32 characters. "
                 f"Current length: {len(v)}. "
-                f"Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+                f'Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
             )
         return v
 

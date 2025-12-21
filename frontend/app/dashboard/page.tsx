@@ -14,14 +14,18 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { SearchBar } from '@/components/SearchBar'
+import { SortDropdown } from '@/components/SortDropdown'
 import { TaskCard } from '@/components/TaskCard'
 import { TaskForm } from '@/components/TaskForm'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { LoadingSkeleton } from '@/components/LoadingSkeleton'
+import { EmptyState } from '@/components/EmptyState'
 import { useAuth } from '@/hooks/useAuth'
 import { useTasks, useDeleteTask, useToggleTaskStatus } from '@/hooks/useTasks'
 import { useToast } from '@/components/ui/Toast'
+import { useNotifications } from '@/hooks/useNotifications'
 import type { Task } from '@/types/api'
 
 type ViewMode = 'board' | 'list'
@@ -30,15 +34,31 @@ type TaskStatus = 'INCOMPLETE' | 'IN_PROGRESS' | 'COMPLETE'
 export default function DashboardPage() {
   const router = useRouter()
   const { user, isLoading, isAuthenticated } = useAuth()
-  const { data: tasks, isLoading: isLoadingTasks } = useTasks(user?.id)
+
+  const [viewMode, setViewMode] = useState<ViewMode>('board')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [filterPriority, setFilterPriority] = useState<string>('all')
+  const [filterTags, setFilterTags] = useState<string>('all')
+  const [sortField, setSortField] = useState<string>('')
+  const [sortOrder, setSortOrder] = useState<string>('asc')
+
+  // Fetch tasks with all filters and sorting (backend filtering)
+  const { data: tasks, isLoading: isLoadingTasks } = useTasks(
+    user?.id,
+    searchQuery,
+    filterStatus !== 'all' ? filterStatus : undefined,
+    filterPriority !== 'all' ? filterPriority : undefined,
+    filterTags !== 'all' ? filterTags : undefined,
+    sortField || undefined,
+    sortOrder || undefined
+  )
   const deleteTask = useDeleteTask()
   const toggleTaskStatus = useToggleTaskStatus()
   const { toast } = useToast()
 
-  const [viewMode, setViewMode] = useState<ViewMode>('board')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterPriority, setFilterPriority] = useState<string>('all')
-  const [filterTags, setFilterTags] = useState<string>('all')
+  // Notifications
+  const { permission, requestPermission, checkUpcomingDeadlines } = useNotifications()
 
   // Task form modal state
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false)
@@ -54,6 +74,30 @@ export default function DashboardPage() {
       router.push('/login')
     }
   }, [isLoading, isAuthenticated, router])
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if (isAuthenticated && permission === 'default') {
+      requestPermission()
+    }
+  }, [isAuthenticated, permission, requestPermission])
+
+  // Interval timer: Check for upcoming deadlines every 5 minutes
+  useEffect(() => {
+    if (!isAuthenticated || !tasks || tasks.length === 0) {
+      return
+    }
+
+    // Initial check
+    checkUpcomingDeadlines(tasks)
+
+    // Set up interval (5 minutes = 300,000ms)
+    const interval = setInterval(() => {
+      checkUpcomingDeadlines(tasks)
+    }, 5 * 60 * 1000)
+
+    return () => clearInterval(interval)
+  }, [isAuthenticated, tasks, checkUpcomingDeadlines])
 
   // Handler: Open create task modal
   const handleCreateTask = () => {
@@ -139,24 +183,8 @@ export default function DashboardPage() {
     )
   }
 
-  // Filter tasks
-  const filteredTasks = tasks?.filter((task) => {
-    // Search query filter
-    const matchesSearch =
-      !searchQuery ||
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description?.toLowerCase().includes(searchQuery.toLowerCase())
-
-    // Priority filter
-    const matchesPriority =
-      filterPriority === 'all' || task.priority === filterPriority
-
-    // Tags filter
-    const matchesTags =
-      filterTags === 'all' || task.tags?.includes(filterTags)
-
-    return matchesSearch && matchesPriority && matchesTags
-  })
+  // All filtering now handled by backend (search, status, priority, tags)
+  const filteredTasks = tasks
 
   // Group tasks by status
   const incompleteTasks = filteredTasks?.filter(
@@ -171,7 +199,7 @@ export default function DashboardPage() {
 
   // Get unique tags from all tasks
   const allTags = Array.from(
-    new Set(tasks?.flatMap((task) => task.tags || []))
+    new Set((tasks || []).flatMap((task) => task.tags || []))
   )
 
   // Column configuration
@@ -244,54 +272,77 @@ export default function DashboardPage() {
                 </button>
               </div>
 
-              {/* Search Bar */}
-              <div className="flex-1 max-w-md">
-                <Input
-                  type="text"
-                  placeholder="Search tasks..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  prefixIcon={
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                  }
-                />
-              </div>
+              {/* Search Bar (debounced, backend filtering) */}
+              <SearchBar
+                onSearchChange={setSearchQuery}
+                placeholder="Search tasks..."
+                initialValue={searchQuery}
+              />
 
               {/* Filters */}
               <Select
                 value={filterPriority}
-                onChange={(e) => setFilterPriority(e.target.value)}
-              >
-                <option value="all">All Priorities</option>
-                <option value="HIGH">High Priority</option>
-                <option value="MEDIUM">Medium Priority</option>
-                <option value="LOW">Low Priority</option>
-              </Select>
+                onChange={(value) => setFilterPriority(value)}
+                options={[
+                  { value: 'all', label: 'All Priorities' },
+                  { value: 'HIGH', label: 'High Priority' },
+                  { value: 'MEDIUM', label: 'Medium Priority' },
+                  { value: 'LOW', label: 'Low Priority' },
+                ]}
+                placeholder="All Priorities"
+              />
 
               {allTags.length > 0 && (
                 <Select
                   value={filterTags}
-                  onChange={(e) => setFilterTags(e.target.value)}
+                  onChange={(value) => setFilterTags(value)}
+                  options={[
+                    { value: 'all', label: 'All Tags' },
+                    ...allTags.map((tag) => ({ value: tag, label: tag })),
+                  ]}
+                  placeholder="All Tags"
+                />
+              )}
+
+              {/* Sort Dropdown */}
+              <SortDropdown
+                onSortChange={(sort, order) => {
+                  setSortField(sort)
+                  setSortOrder(order)
+                }}
+                initialSort={sortField as any}
+                initialOrder={sortOrder as any}
+              />
+
+              {/* Clear Filters Button - Show when any filter is active */}
+              {(searchQuery || filterStatus !== 'all' || filterPriority !== 'all' || filterTags !== 'all' || sortField) && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setFilterStatus('all')
+                    setFilterPriority('all')
+                    setFilterTags('all')
+                    setSortField('')
+                    setSortOrder('asc')
+                  }}
+                  className="text-white/60 hover:text-white"
                 >
-                  <option value="all">All Tags</option>
-                  {allTags.map((tag) => (
-                    <option key={tag} value={tag}>
-                      {tag}
-                    </option>
-                  ))}
-                </Select>
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  Clear Filters
+                </Button>
               )}
 
               {/* Create Task Button */}
@@ -343,17 +394,69 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Notification Blocked Warning */}
+        {permission === 'denied' && (
+          <div className="bg-red-500/20 border border-red-400/50 backdrop-blur-lg p-4">
+            <div className="max-w-[1800px] mx-auto flex items-center gap-3">
+              <svg
+                className="w-6 h-6 text-red-400 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div className="flex-1">
+                <p className="text-red-200 font-medium">
+                  Notifications Blocked
+                </p>
+                <p className="text-red-300/80 text-sm">
+                  You won&apos;t receive reminders for upcoming deadlines. Enable notifications in your browser settings to get notified when tasks are due soon.
+                </p>
+              </div>
+              <button
+                onClick={requestPermission}
+                className="px-4 py-2 bg-red-500/30 hover:bg-red-500/40 border border-red-400/50 text-red-200 rounded-lg transition-all"
+              >
+                Enable Notifications
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Kanban Board */}
         {viewMode === 'board' && (
           <div className="flex-1 overflow-x-auto p-6">
             <div className="max-w-[1800px] mx-auto">
               {isLoadingTasks ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400 mb-4"></div>
-                    <p className="text-white/60">Loading tasks...</p>
-                  </div>
-                </div>
+                <LoadingSkeleton type="board" count={3} />
+              ) : tasks && tasks.length === 0 ? (
+                <EmptyState
+                  type={
+                    searchQuery
+                      ? 'no-search-results'
+                      : filterStatus !== 'all' || filterPriority !== 'all' || filterTags !== 'all'
+                      ? 'no-filtered-tasks'
+                      : 'no-tasks'
+                  }
+                  searchQuery={searchQuery}
+                  onAction={() => {
+                    if (searchQuery) {
+                      setSearchQuery('')
+                    } else if (filterStatus !== 'all' || filterPriority !== 'all' || filterTags !== 'all') {
+                      setFilterStatus('all')
+                      setFilterPriority('all')
+                      setFilterTags('all')
+                    } else {
+                      handleCreateTask()
+                    }
+                  }}
+                />
               ) : (
                 <div className="grid grid-cols-3 gap-6">
                   {columns.map((column) => (
