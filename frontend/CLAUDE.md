@@ -87,13 +87,6 @@ npm install
 
 Copy `.env.local.example` to `.env.local` (already created):
 
-```bash
-# Already created with correct values:
-# - NEXT_PUBLIC_API_URL=http://localhost:8000
-# - BETTER_AUTH_SECRET=EWNhWQFikqssCNiZtGZrUVK32lnGWoobrM9ttp8ezE8
-# - BETTER_AUTH_URL=http://localhost:3000/api/auth
-```
-
 ✅ **Environment Ready**: All variables configured correctly
 
 ### 3. Run Development Server
