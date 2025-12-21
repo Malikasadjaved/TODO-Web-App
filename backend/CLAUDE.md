@@ -70,7 +70,7 @@ cp .env.example .env
 ```
 
 **Required Variables**:
-- `BETTER_AUTH_SECRET`: ✅ Already generated (EWNhWQFikqssCNiZtGZrUVK32lnGWoobrM9ttp8ezE8)
+- `BETTER_AUTH_SECRET`: ✅ Already generated (BETTER_AUTH_SECRET)
 - `DATABASE_URL`: 🔴 Replace with your Neon PostgreSQL connection string
 - `FRONTEND_URL`: Default `http://localhost:3000`
 
