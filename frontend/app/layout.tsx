@@ -16,6 +16,7 @@ import './globals.css'
 import { ToastProvider } from '@/components/ui/Toast'
 import { ThemeProvider } from '@/hooks/useTheme'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { UserMenu } from '@/components/UserMenu'
 
 export default function RootLayout({
   children,
@@ -49,7 +50,7 @@ export default function RootLayout({
           <QueryClientProvider client={queryClient}>
             <ToastProvider>
             {/* Minimal Top Navigation */}
-            <nav className="h-[60px] bg-white/70 dark:bg-purple-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-purple-400/20 px-6 flex items-center justify-between transition-colors">
+            <nav className="relative z-50 h-[60px] bg-white/70 dark:bg-purple-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-purple-400/20 px-6 flex items-center justify-between transition-colors overflow-visible">
               {/* Logo */}
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 dark:from-pink-500 dark:to-orange-400 rounded-lg flex items-center justify-center shadow-lg">
@@ -75,13 +76,7 @@ export default function RootLayout({
               {/* Theme Toggle + User Profile */}
               <div className="flex items-center gap-4">
                 <ThemeToggle />
-                <div className="flex items-center gap-3 px-3 py-2 bg-gray-100 dark:bg-white/5 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 transition-colors cursor-pointer">
-                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 dark:from-purple-600 dark:to-pink-500 rounded-full border-2 border-purple-400/40" />
-                  <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">User</div>
-                    <div className="text-gray-600 dark:text-white/60 text-xs">View Profile</div>
-                  </div>
-                </div>
+                <UserMenu />
               </div>
             </nav>
 
