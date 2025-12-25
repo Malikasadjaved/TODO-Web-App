@@ -18,6 +18,77 @@ Claude Code is an AI assistant that helps developers:
 
 ---
 
+## Monorepo Architecture
+
+**This is a MONOREPO containing multiple phases of the Todo Application:**
+
+### Phase 2: Full-Stack Web App (✅ Completed)
+- **Frontend**: Next.js web UI (`frontend-web/`)
+- **Backend**: FastAPI REST API (`backend/src/`)
+- **Database**: Neon PostgreSQL (shared across phases)
+- **Spec**: `specs/001-fullstack-web-app/`
+
+### Phase 3: AI Chatbot with MCP Architecture (🚧 In Progress)
+- **Frontend**: OpenAI ChatKit UI (`frontend-chatbot/`)
+- **Backend**: MCP Server (`backend/mcp/`)
+- **AI**: OpenAI Agents SDK
+- **Spec**: `specs/002-ai-chatbot-mcp/`
+- **Constitution**: `.specify/memory/phase-3-constitution.md`
+
+### Shared Components
+```
+To-do-app/  (Monorepo Root)
+├── backend/
+│   ├── src/              # Phase 2: FastAPI REST API
+│   │   ├── api/          # HTTP endpoints
+│   │   ├── models/       # SHARED: Task, User, Tag, Conversation, Message
+│   │   └── database/     # SHARED: DB connection, migrations
+│   ├── mcp/              # Phase 3: MCP Server
+│   │   ├── server.py     # MCP server implementation
+│   │   └── tools/        # 5 MCP tools (add_task, list_tasks, etc.)
+│   └── tests/            # Tests for both phases
+│
+├── frontend-web/         # Phase 2: Next.js Web UI
+│   ├── app/
+│   ├── components/
+│   └── lib/api.ts        # REST API client
+│
+├── frontend-chatbot/     # Phase 3: OpenAI ChatKit UI
+│   └── (to be implemented)
+│
+├── specs/
+│   ├── 001-fullstack-web-app/   # Phase 2 spec
+│   └── 002-ai-chatbot-mcp/      # Phase 3 spec
+│
+├── history/prompts/
+│   ├── 001-fullstack-web-app/   # Phase 2 PHRs
+│   └── 002-ai-chatbot-mcp/      # Phase 3 PHRs
+│
+├── .specify/memory/
+│   ├── constitution.md           # Phase 1 principles
+│   ├── phase-2-constitution.md   # Phase 2 constitution
+│   └── phase-3-constitution.md   # Phase 3 constitution
+│
+└── (shared infrastructure: .specify/, .spec-kit/, history/adr/)
+```
+
+### Why Monorepo?
+
+**Critical Advantages:**
+- ✅ **Single Source of Truth**: Task models defined once, used by both web UI and chatbot
+- ✅ **Shared Database**: Same Neon PostgreSQL for both phases
+- ✅ **Shared Authentication**: Better Auth JWT tokens work across both UIs
+- ✅ **Atomic Changes**: One commit updates schemas everywhere
+- ✅ **Simplified Deployment**: Single Docker Compose for both phases
+- ✅ **No Code Duplication**: DRY principle maintained
+
+**Alternative (Rejected):**
+- ❌ Separate repositories → duplicate models, auth logic, database schemas
+- ❌ Schema drift risk → data inconsistency
+- ❌ Complex deployment → two separate CI/CD pipelines
+
+---
+
 ## For Contributors
 
 If you want to contribute to this project using Claude Code, follow these guidelines:
@@ -26,9 +97,13 @@ If you want to contribute to this project using Claude Code, follow these guidel
 
 1. **Install Claude Code:** Download from https://claude.ai/code
 2. **Open this project:** `cd` into the project directory
-3. **Read the constitution:** Check `.specify/memory/constitution.md` for project principles
+3. **Read the constitutions:**
+   - Phase 1: `.specify/memory/constitution.md` (original principles)
+   - Phase 2: `.specify/memory/phase-2-constitution.md` (web app)
+   - Phase 3: `.specify/memory/phase-3-constitution.md` (AI chatbot)
 4. **Follow TDD:** Always write tests before implementation
 5. **Use specs:** Create spec documents in `specs/` before coding features
+6. **Respect monorepo structure:** Keep Phase 2 and Phase 3 code in designated directories
 
 ---
 

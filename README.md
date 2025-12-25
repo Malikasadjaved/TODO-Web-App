@@ -1,48 +1,121 @@
-# Todo App - Phase II: Full-Stack Web Application
+# Todo App - Monorepo (Phase I → Phase II → Phase III)
 
-## ⚠️ IMPORTANT: Monorepo Structure
+## 🏗️ Monorepo Architecture
 
-This project has evolved from Phase I (CLI) to Phase II (Full-Stack Web).
+This is a **MONOREPO** containing three phases of evolution:
 
-- **Phase I Code**: Located in `/phase-1/` directory (preserved for reference)
-- **Phase II Code**: Monorepo with `/backend/` (FastAPI) and `/frontend/` (Next.js)
+### Phase I: Python CLI Application (✅ Completed)
+- **Location**: `/phase-1/` (preserved for reference)
+- **Tech**: Python CLI with in-memory storage
+- **Features**: CRUD operations, priority, tags, recurring tasks, reminders
+- **Tests**: 317 passing, 85% coverage
 
-## Spec-Kit Plus Organization
+### Phase II: Full-Stack Web Application (✅ Completed)
+- **Frontend**: Next.js 16+ (`/frontend-web/`)
+- **Backend**: FastAPI (`/backend/src/`)
+- **Database**: Neon PostgreSQL (shared)
+- **Auth**: Better Auth with JWT
+- **Spec**: `specs/001-fullstack-web-app/`
+- **Features**: User authentication, task CRUD via web UI
+
+### Phase III: AI Chatbot with MCP Architecture (🚧 In Progress)
+- **Frontend**: OpenAI ChatKit (`/frontend-chatbot/`)
+- **Backend**: MCP Server (`/backend/mcp/`)
+- **AI**: OpenAI Agents SDK
+- **Database**: Same Neon PostgreSQL (shared with Phase II)
+- **Auth**: Same Better Auth (shared with Phase II)
+- **Spec**: `specs/002-ai-chatbot-mcp/`
+- **Constitution**: `.specify/memory/phase-3-constitution.md`
+- **Features**: Manage todos via natural language conversation
+
+## 🎯 Why Monorepo?
+
+**Shared Components:**
+- ✅ Task models (Task, User, Tag, Conversation, Message) - defined once, used everywhere
+- ✅ Database (Neon PostgreSQL) - single source of truth
+- ✅ Authentication (Better Auth JWT) - tokens work across web + chatbot
+- ✅ No code duplication - DRY principle maintained
+
+**Project Structure:**
+```
+To-do-app/  (Monorepo Root)
+├── backend/
+│   ├── src/              # Phase 2: FastAPI REST API
+│   ├── mcp/              # Phase 3: MCP Server (5 tools)
+│   └── tests/            # Tests for both phases
+├── frontend-web/         # Phase 2: Next.js Web UI
+├── frontend-chatbot/     # Phase 3: OpenAI ChatKit UI
+├── specs/
+│   ├── 001-fullstack-web-app/   # Phase 2 spec
+│   └── 002-ai-chatbot-mcp/      # Phase 3 spec
+├── .specify/memory/
+│   ├── constitution.md           # Phase 1 principles
+│   ├── phase-2-constitution.md   # Phase 2 constitution
+│   └── phase-3-constitution.md   # Phase 3 constitution
+└── history/
+    ├── prompts/          # Prompt History Records (PHRs)
+    └── adr/              # Architecture Decision Records
+```
+
+## 📖 Specifications (Spec-Kit Plus)
 
 All specifications are organized in `/specs/`:
-- `/specs/overview.md` - Project overview and phase status
-- `/specs/features/` - Feature specifications (what to build)
-- `/specs/api/` - REST API endpoint specifications
-- `/specs/database/` - Database schema and models
-- `/specs/ui/` - Frontend component and page specs
+- `specs/001-fullstack-web-app/` - Phase 2: Web app spec, plan, tasks
+- `specs/002-ai-chatbot-mcp/` - Phase 3: AI chatbot spec, plan, tasks
+- `specs/overview.md` - Project overview and phase status
+- `specs/architecture.md` - Cross-phase architecture decisions
 
-Reference specs with: `@specs/features/task-crud-web.md`
+## 🚀 Running the Application
 
-## Development Workflow
-
-1. Read relevant spec before implementing
-2. Backend development: See `@backend/CLAUDE.md`
-3. Frontend development: See `@frontend/CLAUDE.md`
-4. Always test authentication flow end-to-end
-
-## Running the Application
+### Phase II: Full-Stack Web App
 
 **Local Development:**
 ```bash
-# Backend
+# Backend (FastAPI)
 cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn src.api.main:app --reload
+uvicorn src.api.main:app --reload --port 8000
 
-# Frontend (separate terminal)
-cd frontend
+# Frontend (Next.js) - separate terminal
+cd frontend-web
 npm install
 npm run dev
 
-Docker Compose:
+# Access: http://localhost:3000
+```
+
+**Docker Compose:**
+```bash
 docker-compose up
+```
+
+### Phase III: AI Chatbot (In Development)
+```bash
+# MCP Server
+cd backend/mcp
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python server.py
+
+# ChatKit UI
+cd frontend-chatbot
+npm install
+npm run dev
+
+# Access: http://localhost:3001
+```
+
+## 👨‍💻 Development Workflow
+
+1. **Read constitutions**: See `.specify/memory/` for phase-specific principles
+2. **Follow Spec → Plan → Tasks → Implementation** workflow
+3. **Backend**: See `backend/CLAUDE.md`
+4. **Frontend (Web)**: See `frontend-web/CLAUDE.md`
+5. **Frontend (Chatbot)**: See `frontend-chatbot/CLAUDE.md` (when created)
+6. **Test authentication flow** end-to-end for both web and chatbot
 
 
 
