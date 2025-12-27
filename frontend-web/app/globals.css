@@ -39,7 +39,7 @@
   --bg-tertiary: #3d2475;
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.8);
-  --text-tertiary: rgba(255, 255, 255, 0.6);
+  --text-tertiary: rgba(255, 255, 255, 0.7);  /* Improved from 0.6 for better contrast (WCAG AA) */
   --border-primary: rgba(139, 92, 246, 0.2);
   --border-secondary: rgba(139, 92, 246, 0.3);
 

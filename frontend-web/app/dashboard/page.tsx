@@ -366,12 +366,14 @@ export default function DashboardPage() {
               )}
 
               {/* Chat Assistant Button */}
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 onClick={handleOpenChatAssistant}
-                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg font-medium hover:from-purple-600 hover:to-blue-600 transition-all shadow-lg shadow-purple-500/30 flex items-center"
+                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 shadow-lg shadow-purple-500/30"
               >
                 <svg
-                  className="w-5 h-5 mr-2"
+                  className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -384,7 +386,7 @@ export default function DashboardPage() {
                   />
                 </svg>
                 Chat Assistant
-              </button>
+              </Button>
 
               {/* Create Task Button */}
               <Button variant="primary" onClick={handleCreateTask}>
@@ -454,12 +456,14 @@ export default function DashboardPage() {
                   You won&apos;t receive reminders for upcoming deadlines. Enable notifications in your browser settings to get notified when tasks are due soon.
                 </p>
               </div>
-              <button
+              <Button
+                variant="danger"
+                size="md"
                 onClick={requestPermission}
-                className="px-4 py-2 bg-red-500/30 hover:bg-red-500/40 border border-red-400/50 text-red-200 rounded-lg transition-all"
+                className="bg-red-500/30 hover:bg-red-500/40 border border-red-400/50 text-red-200"
               >
                 Enable Notifications
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -516,7 +520,12 @@ export default function DashboardPage() {
                               {column.tasks?.length || 0}
                             </span>
                           </div>
-                          <button className="text-white/60 hover:text-white transition-colors">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="!p-1 !min-h-0"
+                            aria-label="Add task to column"
+                          >
                             <svg
                               className="w-5 h-5"
                               fill="none"
@@ -530,7 +539,7 @@ export default function DashboardPage() {
                                 d="M12 4v16m8-8H4"
                               />
                             </svg>
-                          </button>
+                          </Button>
                         </div>
                       </div>
 

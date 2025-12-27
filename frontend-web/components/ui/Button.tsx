@@ -30,10 +30,10 @@ export interface ButtonProps
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
 
   /**
-   * Button size
-   * - sm: Small (px-4 py-2, text-sm)
-   * - md: Medium (px-6 py-3, text-base) - default
-   * - lg: Large (px-8 py-4, text-lg)
+   * Button size (2025 standards with minimum touch targets)
+   * - sm: Small (px-3 py-2, text-sm, 32px min-height) - Compact actions, mobile
+   * - md: Medium (px-4 py-3, text-base, 40px min-height) - Default, most common
+   * - lg: Large (px-6 py-4, text-lg, 48px min-height) - Primary CTAs
    */
   size?: 'sm' | 'md' | 'lg'
 
@@ -100,16 +100,16 @@ const getVariantClasses = (variant: ButtonProps['variant']): string => {
 }
 
 /**
- * Get size-specific Tailwind classes
+ * Get size-specific Tailwind classes (2025 standards)
  */
 const getSizeClasses = (size: ButtonProps['size']): string => {
   switch (size) {
     case 'sm':
-      return 'px-4 py-2 text-sm'
+      return 'px-3 py-2 text-sm min-h-[32px]'  // Compact, mobile-friendly
     case 'md':
-      return 'px-6 py-3 text-base'
+      return 'px-4 py-3 text-base min-h-[40px]'  // Default, 44px touch target
     case 'lg':
-      return 'px-8 py-4 text-lg'
+      return 'px-6 py-4 text-lg min-h-[48px]'  // Primary CTAs
     default:
       return getSizeClasses('md')
   }
@@ -161,11 +161,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const baseClasses = [
       'rounded-lg',
-      'font-semibold',
+      'font-medium',  // 2025 standard: 500 weight for better readability
       'transition-all duration-300 ease-in-out',
       'focus:outline-none',
-      'focus:ring-2 focus:ring-purple-400/50',
-      'disabled:opacity-50 disabled:cursor-not-allowed',
+      'focus:ring-2 focus:ring-purple-400',  // 100% opacity for visibility
+      'disabled:opacity-40 disabled:cursor-not-allowed',  // Better distinction
       'disabled:hover:translate-y-0',
       'relative overflow-hidden',
       'inline-flex items-center justify-center gap-2',
