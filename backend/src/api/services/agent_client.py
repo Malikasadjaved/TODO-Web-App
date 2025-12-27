@@ -27,6 +27,7 @@ Implementation: Task T030 (Phase 3: User Story 1)
 
 import json
 import os
+from datetime import datetime
 from typing import Any, Dict, List
 
 import openai
@@ -301,8 +302,16 @@ class AgentClient:
         )
 
         try:
-            # Step 1: Build messages for OpenAI
-            messages = self._format_history(conversation_history)
+            # Step 1: Build messages for OpenAI with system prompt including current date
+            current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            system_message = {
+                "role": "system",
+                "content": f"Current date and time: {current_datetime}"
+            }
+
+            messages = [system_message]
+            messages.extend(self._format_history(conversation_history))
             messages.append({"role": "user", "content": user_message})
 
             # Step 2: Prepare OpenAI function definitions

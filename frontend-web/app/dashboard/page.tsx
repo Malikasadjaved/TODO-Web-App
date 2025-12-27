@@ -22,6 +22,7 @@ import { TaskForm } from '@/components/TaskForm'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { LoadingSkeleton } from '@/components/LoadingSkeleton'
 import { EmptyState } from '@/components/EmptyState'
+import { Calendar } from '@/components/Calendar'
 import { useAuth } from '@/hooks/useAuth'
 import { useTasks, useDeleteTask, useToggleTaskStatus } from '@/hooks/useTasks'
 import { useToast } from '@/components/ui/Toast'
@@ -598,11 +599,7 @@ export default function DashboardPage() {
             </svg>
             Calendar
           </h3>
-          <div className="bg-white/8 backdrop-blur-lg border border-purple-400/20 rounded-xl p-4">
-            <p className="text-white/40 text-sm text-center">
-              Calendar widget coming soon...
-            </p>
-          </div>
+          <Calendar tasks={tasks} />
         </div>
 
         {/* Upcoming Tasks */}
