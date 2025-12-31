@@ -1,11 +1,11 @@
-﻿# Claude Code Development Guide
+# Claude Code Development Guide
 
-> **📘 For Developers Using Claude Code**
-> This file contains development guidelines and rules for contributing to this project using Claude Code.
+> **For Developers Using Claude Code**
+> This file contains development guidelines and rules for contributing to this project.
 
 ## Overview
 
-This project was built using [Claude Code](https://claude.ai/code), an AI-powered development tool that specializes in **Spec-Driven Development (SDD)** and **Test-Driven Development (TDD)**.
+This project was built using [Claude Code](https://claude.ai/code), specializing in **Spec-Driven Development (SDD)** and **Agentic Development**.
 
 ### What is Claude Code?
 
@@ -18,342 +18,542 @@ Claude Code is an AI assistant that helps developers:
 
 ---
 
-## For Contributors
+## Monorepo Architecture
 
-If you want to contribute to this project using Claude Code, follow these guidelines:
+**This is a MONOREPO containing 3 phases of the Todo Application:**
 
-### Quick Start for Claude Code Users
+### Phase 1: CLI Todo App (Completed)
+- **Location**: `phase-1/`
+- **Tech**: Python CLI with in-memory storage
+- **Features**: 12 features with selection menus (F001-F013)
+- **Tests**: 117 passing tests, ~51% coverage
+- **Constitution**: `.specify/memory/constitution.md` (v2.1.0)
 
-1. **Install Claude Code:** Download from https://claude.ai/code
-2. **Open this project:** `cd` into the project directory
-3. **Read the constitution:** Check `.specify/memory/constitution.md` for project principles
-4. **Follow TDD:** Always write tests before implementation
-5. **Use specs:** Create spec documents in `specs/` before coding features
+### Phase 2: Full-Stack Web App (Completed)
+- **Frontend**: Next.js web UI (`frontend-web/`, port 3000)
+- **Backend**: FastAPI REST API (`backend/src/`, port 8000)
+- **Database**: Neon PostgreSQL: Authentication, Task CRUD, Modern UI/UX
+- **Constitution**: `.specify/memory/phase-2-constitution.md` (v1.1.0)
+
+### Phase 3: AI Chatbot (In Progress)
+- **Frontend**: React ChatKit UI (`frontend-chatbot/`, port 3001)
+- **Backend**: MCP Server (`backend/mcp/`) with OpenAI Agents SDK
+- **Features**: Natural language task management
+- **Constitution**: `.specify/memory/phase-3-constitution.md` (v1.1.0)
+
+### Shared Components
+
+```
+To-do-app/  (Monorepo Root)
+├── phase-1/              # Phase 1: Python CLI Todo App
+│   ├── main.py           # CLI entry point
+│   ├── src/todo/         # Core business logic
+│   ├── tests/            # 117 tests
+│   └── demo.py           # Feature demonstration
+│
+├── backend/              # Phase 2 & 3: FastAPI Backend
+│   ├── src/api/
+│   │   ├── main.py       # FastAPI app, CORS, startup
+│   │   ├── config.py     # Pydantic settings
+│   │   ├── auth.py       # JWT verification
+│   │   ├── db.py         # SQLModel engine, sessions
+│   │   ├── models.py     # User, Task, Tag, Conversation, Message
+│   │   ├── routes/       # REST endpoints
+│   │   │   ├── auth.py   # Auth endpoints
+│   │   │   ├── tasks.py  # Task CRUD
+│   │   │   ├── tags.py   # Tag management
+│   │   │   └── chat.py   # Chat/session endpoints
+│   │   ├── schemas/      # Pydantic schemas
+│   │   └── services/     # Business logic
+│   │       ├── agent.py        # OpenAI agent
+│   │       └── agent_client.py # Agent API client
+│   ├── mcp/              # Phase 3: MCP Server tools
+│   │   ├── server.py     # MCP server implementation
+│   │   └── tools/        # 5 MCP tools (add_task, list_tasks, etc.)
+│   └── tests/            # Backend tests
+│
+├── frontend-web/         # Phase 2: Next.js Web UI (port 3000)
+│   ├── app/
+│   │   ├── api/          # Better Auth API
+│   │   ├── login/        # Login page
+│   │   ├── signup/       # Signup page
+│   │   ├── dashboard/    # Protected dashboard
+│   │   └── page.tsx      # Landing page
+│   ├── components/       # React components
+│   ├── lib/              # API client, auth
+│   └── types/            # TypeScript types
+│
+├── frontend-chatbot/     # Phase 3: React Chatbot (port 3001)
+│   ├── src/
+│   │   ├── components/   # ChatInterface
+│   │   ├── lib/          # API client
+│   │   └── pages/        # Next.js pages
+│
+├── specs/                # Feature specifications
+│   ├── 001-todo-cli-app/
+│   ├── 001-fullstack-web-app/
+│   └── 002-ai-chatbot-mcp/
+│
+├── .spec-kit/            # Spec-Kit Plus configuration
+│   ├── agents.yaml       # Agent/Skill definitions
+│   ├── config.yaml       # Project configuration
+│   └── skills/           # Reusable agent skills
+│       └── auth_integration.md
+│
+├── history/prompts/      # Prompt History Records
+├── history/adr/          # Architecture Decision Records
+└── .specify/memory/      # Constitutions (all phases)
+    ├── constitution.md           # Phase 1 (v2.1.0)
+    ├── phase-2-constitution.md   # Phase 2 (v1.1.0)
+    └── phase-3-constitution.md   # Phase 3 (v1.1.0)
+```
 
 ---
 
-## Development Workflow (Claude Code Specific)
+## Constitution System
 
-This file contains the complete development rules and guidelines for working with Claude Code on this project.
+**Three constitutions govern this project, one per phase:**
 
-## Task context
+| Phase | File | Version | Key Principles |
+|-------|------|---------|----------------|
+| 1 | `.specify/memory/constitution.md` | 2.1.0 | Three-tier architecture, TDD, in-memory storage |
+| 2 | `.specify/memory/phase-2-constitution.md` | 1.1.0 | REST API, JWT auth, user isolation, agent-assisted dev |
+| 3 | `.specify/memory/phase-3-constitution.md` | 1.1.0 | Radical statelessness, MCP tools, cloud-native |
 
-**Your Surface:** You operate on a project level, providing guidance to users and executing development tasks via a defined set of tools.
+### Constitution Usage
 
-**Your Success is Measured By:**
-- All outputs strictly follow the user intent.
-- Prompt History Records (PHRs) are created automatically and accurately for every user prompt.
-- Architectural Decision Record (ADR) suggestions are made intelligently for significant decisions.
-- All changes are small, testable, and reference code precisely.
+**Always reference the appropriate constitution for your phase:**
 
-## Core Guarantees (Product Promise)
+```
+Phase 1 (CLI):     @.specify/memory/constitution.md
+Phase 2 (Web):     @.specify/memory/phase-2-constitution.md
+Phase 3 (Chatbot): @.specify/memory/phase-3-constitution.md
+```
 
-- Record every user input verbatim in a Prompt History Record (PHR) after every user message. Do not truncate; preserve full multiline input.
-- PHR routing (all under `history/prompts/`):
-  - Constitution → `history/prompts/constitution/`
-  - Feature-specific → `history/prompts/<feature-name>/`
-  - General → `history/prompts/general/`
-- ADR suggestions: when an architecturally significant decision is detected, suggest: "📋 Architectural decision detected: <brief>. Document? Run `/sp.adr <title>`." Never auto‑create ADRs; require user consent.
+### Key Phase 3 Principles (Critical for AI Chatbot)
 
-## Development Guidelines
+1. **Agentic Development Supremacy**: NO human shall write production code directly
+2. **Radical Statelessness**: Server is a pure function - no memory between invocations
+3. **MCP as Universal Interface**: All AI-to-app interactions through MCP tools only
+4. **Four-Layer Architecture**: Presentation → API Gateway → Intelligence → Tool Execution
+5. **Cloud-Native Ready**: Health checks, graceful shutdown, 0.0.0.0 binding
 
-### 1. Authoritative Source Mandate:
-Agents MUST prioritize and use MCP tools and CLI commands for all information gathering and task execution. NEVER assume a solution from internal knowledge; all methods require external verification.
+---
 
-### 2. Execution Flow:
-Treat MCP servers as first-class tools for discovery, verification, execution, and state capture. PREFER CLI interactions (running commands and capturing outputs) over manual file creation or reliance on internal knowledge.
+## Agent System (.spec-kit/agents.yaml)
 
-### 3. Knowledge capture (PHR) for Every User Input.
-After completing requests, you **MUST** create a PHR (Prompt History Record).
-
-**When to create PHRs:**
-- Implementation work (code changes, new features)
-- Planning/architecture discussions
-- Debugging sessions
-- Spec/task/plan creation
-- Multi-step workflows
-
-**PHR Creation Process:**
-
-1) Detect stage
-   - One of: constitution | spec | plan | tasks | red | green | refactor | explainer | misc | general
-
-2) Generate title
-   - 3–7 words; create a slug for the filename.
-
-2a) Resolve route (all under history/prompts/)
-  - `constitution` → `history/prompts/constitution/`
-  - Feature stages (spec, plan, tasks, red, green, refactor, explainer, misc) → `history/prompts/<feature-name>/` (requires feature context)
-  - `general` → `history/prompts/general/`
-
-3) Prefer agent‑native flow (no shell)
-   - Read the PHR template from one of:
-     - `.specify/templates/phr-template.prompt.md`
-     - `templates/phr-template.prompt.md`
-   - Allocate an ID (increment; on collision, increment again).
-   - Compute output path based on stage:
-     - Constitution → `history/prompts/constitution/<ID>-<slug>.constitution.prompt.md`
-     - Feature → `history/prompts/<feature-name>/<ID>-<slug>.<stage>.prompt.md`
-     - General → `history/prompts/general/<ID>-<slug>.general.prompt.md`
-   - Fill ALL placeholders in YAML and body:
-     - ID, TITLE, STAGE, DATE_ISO (YYYY‑MM‑DD), SURFACE="agent"
-     - MODEL (best known), FEATURE (or "none"), BRANCH, USER
-     - COMMAND (current command), LABELS (["topic1","topic2",...])
-     - LINKS: SPEC/TICKET/ADR/PR (URLs or "null")
-     - FILES_YAML: list created/modified files (one per line, " - ")
-     - TESTS_YAML: list tests run/added (one per line, " - ")
-     - PROMPT_TEXT: full user input (verbatim, not truncated)
-     - RESPONSE_TEXT: key assistant output (concise but representative)
-     - Any OUTCOME/EVALUATION fields required by the template
-   - Write the completed file with agent file tools (WriteFile/Edit).
-   - Confirm absolute path in output.
-
-4) Use sp.phr command file if present
-   - If `.**/commands/sp.phr.*` exists, follow its structure.
-   - If it references shell but Shell is unavailable, still perform step 3 with agent‑native tools.
-
-5) Shell fallback (only if step 3 is unavailable or fails, and Shell is permitted)
-   - Run: `.specify/scripts/bash/create-phr.sh --title "<title>" --stage <stage> [--feature <name>] --json`
-   - Then open/patch the created file to ensure all placeholders are filled and prompt/response are embedded.
-
-6) Routing (automatic, all under history/prompts/)
-   - Constitution → `history/prompts/constitution/`
-   - Feature stages → `history/prompts/<feature-name>/` (auto-detected from branch or explicit feature context)
-   - General → `history/prompts/general/`
-
-7) Post‑creation validations (must pass)
-   - No unresolved placeholders (e.g., `{{THIS}}`, `[THAT]`).
-   - Title, stage, and dates match front‑matter.
-   - PROMPT_TEXT is complete (not truncated).
-   - File exists at the expected path and is readable.
-   - Path matches route.
-
-8) Report
-   - Print: ID, path, stage, title.
-   - On any failure: warn but do not block the main command.
-   - Skip PHR only for `/sp.phr` itself.
-
-### 4. Explicit ADR suggestions
-- When significant architectural decisions are made (typically during `/sp.plan` and sometimes `/sp.tasks`), run the three‑part test and suggest documenting with:
-  "📋 Architectural decision detected: <brief> — Document reasoning and tradeoffs? Run `/sp.adr <decision-title>`"
-- Wait for user consent; never auto‑create the ADR.
-
-### 5. Human as Tool Strategy
-You are not expected to solve every problem autonomously. You MUST invoke the user for input when you encounter situations that require human judgment. Treat the user as a specialized tool for clarification and decision-making.
-
-**Invocation Triggers:**
-1.  **Ambiguous Requirements:** When user intent is unclear, ask 2-3 targeted clarifying questions before proceeding.
-2.  **Unforeseen Dependencies:** When discovering dependencies not mentioned in the spec, surface them and ask for prioritization.
-3.  **Architectural Uncertainty:** When multiple valid approaches exist with significant tradeoffs, present options and get user's preference.
-4.  **Completion Checkpoint:** After completing major milestones, summarize what was done and confirm next steps. 
-
-## Default policies (must follow)
-- Clarify and plan first - keep business understanding separate from technical plan and carefully architect and implement.
-- Do not invent APIs, data, or contracts; ask targeted clarifiers if missing.
-- Never hardcode secrets or tokens; use `.env` and docs.
-- Prefer the smallest viable diff; do not refactor unrelated code.
-- Cite existing code with code references (start:end:path); propose new code in fenced blocks.
-- Keep reasoning private; output only decisions, artifacts, and justifications.
-
-### Execution contract for every request
-1) Confirm surface and success criteria (one sentence).
-2) List constraints, invariants, non‑goals.
-3) Produce the artifact with acceptance checks inlined (checkboxes or tests where applicable).
-4) Add follow‑ups and risks (max 3 bullets).
-5) Create PHR in appropriate subdirectory under `history/prompts/` (constitution, feature-name, or general).
-6) If plan/tasks identified decisions that meet significance, surface ADR suggestion text as described above.
-
-### Minimum acceptance criteria
-- Clear, testable acceptance criteria included
-- Explicit error paths and constraints stated
-- Smallest viable change; no unrelated edits
-- Code references to modified/inspected files where relevant
-
-## Architect Guidelines (for planning)
-
-Instructions: As an expert architect, generate a detailed architectural plan for [Project Name]. Address each of the following thoroughly.
-
-1. Scope and Dependencies:
-   - In Scope: boundaries and key features.
-   - Out of Scope: explicitly excluded items.
-   - External Dependencies: systems/services/teams and ownership.
-
-2. Key Decisions and Rationale:
-   - Options Considered, Trade-offs, Rationale.
-   - Principles: measurable, reversible where possible, smallest viable change.
-
-3. Interfaces and API Contracts:
-   - Public APIs: Inputs, Outputs, Errors.
-   - Versioning Strategy.
-   - Idempotency, Timeouts, Retries.
-   - Error Taxonomy with status codes.
-
-4. Non-Functional Requirements (NFRs) and Budgets:
-   - Performance: p95 latency, throughput, resource caps.
-   - Reliability: SLOs, error budgets, degradation strategy.
-   - Security: AuthN/AuthZ, data handling, secrets, auditing.
-   - Cost: unit economics.
-
-5. Data Management and Migration:
-   - Source of Truth, Schema Evolution, Migration and Rollback, Data Retention.
-
-6. Operational Readiness:
-   - Observability: logs, metrics, traces.
-   - Alerting: thresholds and on-call owners.
-   - Runbooks for common tasks.
-   - Deployment and Rollback strategies.
-   - Feature Flags and compatibility.
-
-7. Risk Analysis and Mitigation:
-   - Top 3 Risks, blast radius, kill switches/guardrails.
-
-8. Evaluation and Validation:
-   - Definition of Done (tests, scans).
-   - Output Validation for format/requirements/safety.
-
-9. Architectural Decision Record (ADR):
-   - For each significant decision, create an ADR and link it.
-
-### Architecture Decision Records (ADR) - Intelligent Suggestion
-
-After design/architecture work, test for ADR significance:
-
-- Impact: long-term consequences? (e.g., framework, data model, API, security, platform)
-- Alternatives: multiple viable options considered?
-- Scope: cross‑cutting and influences system design?
-
-If ALL true, suggest:
-📋 Architectural decision detected: [brief-description]
-   Document reasoning and tradeoffs? Run `/sp.adr [decision-title]`
-
-Wait for consent; never auto-create ADRs. Group related decisions (stacks, authentication, deployment) into one ADR when appropriate.
-
-## Basic Project Structure
-
-- `.specify/memory/constitution.md` — Project principles (Phase 1 - preserved)
-- `.specify/memory/phase-2-constitution.md` — Phase 2 constitution (v1.1.0 - ACTIVE)
-- `specs/<feature>/spec.md` — Feature requirements
-- `specs/<feature>/plan.md` — Architecture decisions
-- `specs/<feature>/tasks.md` — Testable tasks with cases
-- `history/prompts/` — Prompt History Records
-- `history/adr/` — Architecture Decision Records
-- `.specify/` — SpecKit Plus templates and scripts (Phase 1)
-- `.spec-kit/agents.yaml` — Phase 2 agent and skill configurations
-
-## Agent-Assisted Development (Phase 2 - CRITICAL)
-
-**The project MUST use specialized agents for validation, auditing, and code generation per Phase 2 Constitution Section XIII.**
-
-All agent and skill definitions are in `.spec-kit/agents.yaml`.
-
-### Agent vs Skill Usage
-
-| Type | Purpose | When to Use | Command Pattern |
-|------|---------|-------------|-----------------|
-| **Skill** | Generate boilerplate code | Before manual implementation | `"Use the <skill_name> skill to generate <file>"` |
-| **Agent** | Validate existing code | After implementation | `"Create the <agent_name> agent and RUN it"` |
+The project uses specialized agents for validation, auditing, and code generation.
 
 ### Available Agents
 
-#### 1. Spec Validator Agent
-**Purpose:** Validate specifications before implementation
-**Triggers:**
-- Before starting implementation
-- After spec updates
-- During /sp.clarify workflow
-
-**Validation Rules:**
-- All API endpoints have database models
-- JWT flow is consistent across all specs
-- All endpoints document auth requirements
-- Error responses are specified with status codes
-- Validation rules are defined for all inputs
-- User isolation enforced in all CRUD specs
-
-**Usage:** `"Create the spec_validator agent and run it on specs/001-fullstack-web-app/spec.md"`
-
-#### 2. Security Auditor Agent
-**Purpose:** Audit implementation for security vulnerabilities
-**Triggers:**
-- After implementing authentication (JWT middleware)
-- After implementing API endpoints
-- Before deployment to production
-- After any auth-related code changes
-
-**Audit Checks:**
-- JWT verification present on ALL protected endpoints
-- Token user_id matches URL user_id check is present
-- Database queries filter by token user_id (NEVER URL user_id)
-- No hardcoded BETTER_AUTH_SECRET in source code
-- Proper 401 vs 403 error responses (401: missing token, 403: wrong user)
-- CORS configuration allows only frontend origin
-- No SQL injection vulnerabilities (SQLModel parameterized queries used)
-
-**Usage:** `"Create the security_auditor agent and run it on backend/src/api/"`
-
-#### 3. API Contract Validator Agent
-**Purpose:** Ensure frontend-backend API alignment
-**Triggers:**
-- After backend API implementation
-- After frontend API client implementation
-- After API spec changes
-- Before integration testing
-
-**Validation Checks:**
-- Endpoint paths match spec exactly (e.g., /api/{user_id}/tasks)
-- Request payload types align (TypeScript ↔ Pydantic)
-- Response payload types align
-- Frontend handles all documented error codes (401, 403, 404, 422, 500)
-- Authorization: Bearer <token> header included in all protected requests
-- TypeScript interfaces match Pydantic models (Task, User, Tag)
-
-**Usage:** `"Create the api_contract_validator agent and run it to check frontend/backend alignment"`
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| **spec_validator** | Validate specifications before implementation | Before starting, after spec updates |
+| **security_auditor** | Audit implementation for security vulnerabilities | After auth/API implementation |
+| **api_contract_validator** | Ensure frontend-backend API alignment | After backend/frontend implementation |
 
 ### Available Skills
 
-#### 1. JWT Middleware Generator
-**Purpose:** Generate FastAPI JWT verification middleware following constitution Section VI (5-step JWT flow)
+| Skill | Purpose | Output |
+|-------|---------|--------|
+| **jwt_middleware_generator** | Generate FastAPI JWT verification middleware | `backend/src/api/auth.py` |
+| **api_client_generator** | Generate type-safe frontend API client | `frontend/lib/api.ts`, `frontend/types/api.ts` |
+| **auth_integration** | Hardened JWT auth with Windows fixes | `backend/src/api/auth.py` |
 
-**Output Files:** `backend/src/api/auth.py`
+### Agent vs Skill Usage
 
-**Pattern:**
-1. Extract token from "Authorization: Bearer <token>" header
-2. Verify signature using BETTER_AUTH_SECRET (from environment)
-3. Check token expiration (reject if expired → 401)
-4. Decode payload to extract user_id and email
-5. Raise HTTPException 401 on any verification failure
-6. Return user_id for use in route handlers
+| Type | Purpose | Command Pattern |
+|------|---------|-----------------|
+| **Skill** | Generate boilerplate code | `"Use the <skill_name> skill to generate <file>"` |
+| **Agent** | Validate existing code | `"Create the <agent_name> agent and RUN it"` |
 
-**Usage:** `"Use the jwt_middleware_generator skill to generate backend/src/api/auth.py"`
+**Examples:**
+```
+Skill:  "Use the jwt_middleware_generator skill to generate backend/src/api/auth.py"
+Agent:  "Create the security_auditor agent and run it on backend/src/api/"
+```
 
-#### 2. API Client Generator
-**Purpose:** Generate type-safe frontend API client with automatic JWT attachment
+---
 
-**Output Files:** `frontend/lib/api.ts`, `frontend/types/api.ts`
+## MCP Tools Specification (Phase 3)
 
-**Pattern:**
-1. Auto-attach JWT token from localStorage to all requests
-2. Type-safe request/response using TypeScript interfaces
-3. Handle 401 Unauthorized → redirect to /login
-4. Handle 403 Forbidden → show error toast
-5. Handle network errors → show retry option
-6. Debounce search requests (300ms delay)
-7. Provide methods for all API endpoints (getTasks, createTask, updateTask, etc.)
+**Five atomic MCP tools for task management:**
 
-**Usage:** `"Use the api_client_generator skill to generate frontend/lib/api.ts"`
+### Tool 1: add_task
+```python
+def add_task(user_id: str, title: str, description: str = "") -> dict
+```
+- Insert new row in tasks table
+- Return: `{"task_id": int, "status": "created", "title": str}`
 
-### Agent Creation Timeline
+### Tool 2: list_tasks
+```python
+def list_tasks(user_id: str, status: str = "all") -> dict
+```
+- Query tasks WHERE user_id = ? AND (completed filter)
+- Return: `{"tasks": [...], "count": int, "filter": str}`
 
-1. **Constitution Phase** (✅ Completed): Agents specified in `.spec-kit/agents.yaml`
-2. **Spec Writing Phase** (✅ Completed): Detailed specs created
-3. **Agent Creation Phase** (Next): Create Spec Validator Agent, run on specs
-4. **Implementation Phase**: Use skills to generate boilerplate (auth.py, api.ts)
-5. **Audit Phase**: Create and run Security Audit Agent
-6. **Integration Phase**: Create and run API Contract Agent
+### Tool 3: complete_task
+```python
+def complete_task(user_id: str, task_id: int) -> dict
+```
+- UPDATE tasks SET completed=true WHERE id=? AND user_id=?
+- Return: `{"task_id": int, "status": "completed", "title": str}`
 
-### Rationale
-Agents automate validation, catch security issues early, and ensure frontend-backend alignment. Skills accelerate boilerplate generation following constitution patterns.
+### Tool 4: delete_task
+```python
+def delete_task(user_id: str, task_id: int) -> dict
+```
+- DELETE FROM tasks WHERE id=? AND user_id=?
+- Return: `{"task_id": int, "status": "deleted", "title": str}`
 
-## Code Standards
-See `.specify/memory/phase-2-constitution.md` for Phase 2 code quality, testing, performance, security, and architecture principles.
-See `.specify/memory/constitution.md` for Phase 1 principles (preserved for reference).
+### Tool 5: update_task
+```python
+def update_task(user_id: str, task_id: int, title: str = None, description: str = None) -> dict
+```
+- Build UPDATE query with provided fields
+- Return: `{"task_id": int, "status": "updated", "title": str}`
+
+**CRITICAL RULE:** MCP tools NEVER call each other. Agent orchestrates multi-tool workflows.
+
+---
+
+## How to Run This Project
+
+### Three Services to Run
+
+#### 1. Backend (FastAPI REST API + MCP Server)
+```bash
+cd backend
+./venv/Scripts/python.exe -m uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
+```
+- **Port**: http://localhost:8000
+- **Health**: http://localhost:8000/health
+- **Docs**: http://localhost:8000/docs
+
+#### 2. Frontend Web (Next.js - Phase 2)
+```bash
+cd frontend-web
+npm run dev
+```
+- **Port**: http://localhost:3000
+
+#### 3. Frontend Chatbot (React - Phase 3)
+```bash
+cd frontend-chatbot
+npm run dev
+```
+- **Port**: http://localhost:3001
+
+### Port Summary
+
+| Service | Port | URL | Status |
+|---------|------|-----|--------|
+| **Backend API** | 8000 | http://localhost:8000 | Ready |
+| **Frontend Web** | 3000 | http://localhost:3000 | Ready |
+| **Chatbot UI** | 3001 | http://localhost:3001 | Ready |
+| **Database** | N/A | Neon PostgreSQL | Always available |
+
+### Complete Startup Sequence (3 terminals)
+
+**Terminal 1 (Backend):**
+```bash
+cd backend
+./venv/Scripts/python.exe -m uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Terminal 2 (Frontend Web):**
+```bash
+cd frontend-web
+npm run dev
+```
+
+**Terminal 3 (Frontend Chatbot):**
+```bash
+cd frontend-chatbot
+npm run dev
+```
+
+---
+
+## Development Workflow
+
+### Spec-Driven Development (SDD) Cycle
+
+```
++--------------------------------------------------------+
+| Phase 1: SPECIFICATION                                  |
+| Write complete specs for architecture                   |
++---------------------+----------------------------------+
+                      |
+                      v
++--------------------------------------------------------+
+| Phase 2: PLANNING (via Claude Code)                    |
+| Generate implementation plan                           |
++---------------------+----------------------------------+
+                      |
+                      v
++--------------------------------------------------------+
+| Phase 3: TASK BREAKDOWN (via Claude Code)              |
+| Decompose plan into atomic tasks                       |
++---------------------+----------------------------------+
+                      |
+                      v
++--------------------------------------------------------+
+| Phase 4: IMPLEMENTATION (via Claude Code)              |
+| Execute each task via AI (TDD: Red-Green-Refactor)    |
++---------------------+----------------------------------+
+                      |
+                      v
++--------------------------------------------------------+
+| Phase 5: VALIDATION (via Agents)                       |
+| Run spec_validator, security_auditor, api_contract     |
++---------------------+----------------------------------+
+                      |
+                      v
++--------------------------------------------------------+
+| Phase 6: REVIEW & DOCUMENTATION                         |
+| Create PHR, ADR if significant decision                |
++--------------------------------------------------------+
+```
+
+### Slash Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/sp.specify` | Create feature specification |
+| `/sp.plan` | Generate architecture plan |
+| `/sp.tasks` | Break into atomic tasks |
+| `/sp.implement` | Execute implementation via TDD |
+| `/sp.phr` | Create Prompt History Record |
+| `/sp.adr <title>` | Create Architecture Decision Record |
+| `/sp.clarify` | Identify underspecified areas |
+
+---
+
+## Prompt History Records (PHRs)
+
+**After EVERY user interaction, create a PHR in `history/prompts/`:**
+
+### PHR Routing
+
+| Stage | Route |
+|-------|-------|
+| Constitution | `history/prompts/constitution/` |
+| Spec | `history/prompts/<feature-name>/` |
+| Plan | `history/prompts/<feature-name>/` |
+| Tasks | `history/prompts/<feature-name>/` |
+| Implementation (red/green/refactor) | `history/prompts/<feature-name>/` |
+| General | `history/prompts/general/` |
+
+### PHR Creation Process
+
+1. Detect stage (constitution, spec, plan, tasks, red, green, refactor, etc.)
+2. Generate title (3-7 words, slug format)
+3. Read template from `.specify/templates/phr-template.prompt.md`
+4. Allocate ID (increment, handle collisions)
+5. Fill ALL placeholders:
+   - ID, TITLE, STAGE, DATE_ISO, SURFACE
+   - MODEL, FEATURE, BRANCH, USER
+   - COMMAND, LABELS, LINKS
+   - FILES_YAML (created/modified files)
+   - TESTS_YAML (tests run/added)
+   - PROMPT_TEXT (verbatim user input)
+   - RESPONSE_TEXT (key assistant output)
+6. Write file with Write tool
+7. Report: ID, path, stage, title
+
+---
+
+## Architectural Decision Records (ADRs)
+
+**For significant decisions, suggest documenting with ADR:**
+
+```
++ Architectural decision detected: <brief-description>
+   Document reasoning and tradeoffs? Run `/sp.adr <decision-title>`
+```
+
+### Three-Part ADR Test
+
+An ADR is needed when ALL are true:
+- **Impact**: Long-term consequences (framework, data model, API, security)
+- **Alternatives**: Multiple viable options considered
+- **Scope**: Cross-cutting and influences system design
+
+### ADR Location
+`history/adr/<sequence>-<title>.md`
+
+---
+
+## Code Quality Standards
+
+### Backend (Python)
+
+| Tool | Purpose | Command |
+|------|---------|---------|
+| **black** | Formatting (line length: 88) | `black backend/` |
+| **flake8** | Linting | `flake8 backend/` |
+| **mypy** | Type checking (strict) | `mypy backend/` |
+| **pytest** | Testing (≥60% coverage) | `pytest backend/tests/` |
+
+### Frontend (TypeScript)
+
+| Tool | Purpose | Command |
+|------|---------|---------|
+| **ESLint** | Linting | `npm run lint` |
+| **Prettier** | Formatting | `npm run format` |
+| **TypeScript** | Type checking | `npm run type-check` |
+| **Jest** | Testing | `npm test` |
+
+---
+
+## Security Requirements
+
+### JWT Flow (Phase 2 & 3)
+
+**5-Step Security Chain:**
+
+1. **Token Extraction**: `Authorization: Bearer <token>` header
+2. **Signature Verification**: Use `BETTER_AUTH_SECRET` (HS256)
+3. **Expiration Check**: Reject if expired → 401
+4. **User Authorization**: Token `user_id` MUST match URL `user_id`
+5. **Data Filtering**: ALWAYS filter by token `user_id` (NEVER URL user_id)
+
+### Security Anti-Patterns
+
+**WRONG** (Security Vulnerability):
+```python
+tasks = session.exec(select(Task).where(Task.user_id == user_id_from_url)).all()
+```
+
+**CORRECT** (Secure):
+```python
+tasks = session.exec(select(Task).where(Task.user_id == current_user['user_id'])).all()
+```
+
+### Critical Security Checklist
+
+- [ ] JWT verification on ALL protected endpoints
+- [ ] Token user_id matches URL user_id check present
+- [ ] Database queries filter by token user_id (NEVER URL user_id)
+- [ ] No hardcoded BETTER_AUTH_SECRET
+- [ ] Proper 401 vs 403 error responses
+- [ ] CORS configuration allows only frontend origin
+- [ ] No SQL injection vulnerabilities (use SQLModel)
+
+---
+
+## Cloud-Native Requirements (Phase 3)
+
+### Health Check Endpoints (Mandatory)
+
+```python
+@app.get("/health")
+async def health_check():
+    """Liveness probe - is the process running?"""
+    return {"status": "healthy"}
+
+@app.get("/ready")
+async def readiness_check():
+    """Readiness probe - is the app ready to handle traffic?"""
+    # Must verify DB connection
+    return {"status": "ready"}
+```
+
+### Port Binding
+
+**MUST bind to 0.0.0.0 (not 127.0.0.1):**
+
+```python
+uvicorn.run("main:app", host="0.0.0.0", port=8000)
+```
+
+### Graceful Shutdown
+
+Handle SIGTERM/SIGINT for Kubernetes:
+
+```python
+signal.signal(signal.SIGTERM, handle_sigterm)
+signal.signal(signal.SIGINT, handle_sigint)
+```
+
+### Structured JSON Logging
+
+```python
+import json
+
+logger.info(json.dumps({
+    "event": "mcp_tool_invoked",
+    "tool": "add_task",
+    "user_id": user_id[:8] + "***",  # PII protected
+    "execution_time_ms": 45,
+    "status": "success"
+}))
+```
+
+---
+
+## User Isolation (CRITICAL)
+
+**EVERY database query MUST filter by user_id:**
+
+```python
+# CORRECT - Secure user isolation
+tasks = session.exec(
+    select(Task).where(Task.user_id == token_user_id)
+).all()
+
+# FORBIDDEN - Data leak vulnerability
+tasks = session.exec(select(Task)).all()
+```
+
+---
+
+## Quick Reference
+
+### Common Issues & Fixes
+
+| Issue | Fix |
+|-------|-----|
+| Port in use | `Stop-Process -Id (Get-Process -Id <port>).Id -Force` |
+| Next.js lock | `rm -f frontend-web/.next/dev/lock` |
+| Module not found | `npm install --legacy-peer-deps` |
+| Windows encoding | UTF-8 forcing in logger.py |
+
+### Verification Checklist
+
+- [ ] Backend health: http://localhost:8000/health → `{"status":"healthy"}`
+- [ ] Backend docs: http://localhost:8000/docs → Swagger UI loads
+- [ ] Frontend web: http://localhost:3000 → Landing page shows
+- [ ] Chatbot UI: http://localhost:3001 → Chat interface loads
+
+### Forbidden Practices
+
+1. Never store state in module-level variables (defeats stateless design)
+2. Never bypass MCP tools for direct DB access from agent
+3. Never manually write production code (violates Phase 3 principle)
+4. Never use `eval()` or `exec()` on user input
+5. Never commit `.env` files
+6. Never cache conversation state in memory
+7. Never bind to 127.0.0.1 (use 0.0.0.0 for containers)
+8. Never log sensitive data (API keys, user messages)
+
+---
+
+## References
+
+| Resource | Path |
+|----------|------|
+| Phase 1 Constitution | `.specify/memory/constitution.md` |
+| Phase 2 Constitution | `.specify/memory/phase-2-constitution.md` |
+| Phase 3 Constitution | `.specify/memory/phase-3-constitution.md` |
+| Agent Configuration | `.spec-kit/agents.yaml` |
+| Project Config | `.spec-kit/config.yaml` |
+| Auth Skill | `.spec-kit/skills/auth_integration.md` |
+| Specs Directory | `specs/` |
+
+---
+
+**Last Updated**: 2025-12-31
+**Maintained By**: Claude Code
